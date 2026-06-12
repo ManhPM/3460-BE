@@ -1,0 +1,39 @@
+<?php
+
+namespace App\Api\V1\Http\Resources\Category;
+
+use App\Api\V1\Http\Resources\Product\AllProductResourceNoPaginate;
+use Illuminate\Http\Resources\Json\ResourceCollection;
+
+class AllCategoryTreeWithProductsResource extends ResourceCollection
+{
+    /**
+     * Transform the resource into an array.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return array|\Illuminate\Contracts\Support\Arrayable|\JsonSerializable
+     */
+    public function toArray($request)
+    {
+        return $this->collection->map(function ($category) {
+            return $this->recursive($category);
+        });
+    }
+
+    private function recursive($category)
+    {
+        $data = [
+            'id' => $category->id,
+            'name' => $category->name,
+            'avatar' => asset($category->avatar),
+            'products' => new AllProductResourceNoPaginate($category->products)
+        ];
+
+        if ($category->children && $category->children->count() > 0) {
+            $data['children'] = $category->children->map(function ($category) {
+                return $this->recursive($category);
+            });
+        }
+        return $data;
+    }
+}
