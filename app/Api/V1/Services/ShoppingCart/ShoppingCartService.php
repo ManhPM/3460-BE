@@ -394,7 +394,7 @@ class ShoppingCartService implements ShoppingCartServiceInterface
                     $this->data['order']['total']
                 );
                 $this->orderDetails = [];
-                $this->prepareData($shopping_cart);
+                $this->prepareData($shopping_cart, $this->data['affiliate_code'] ?? null);
                 $this->handleMembershipDiscount($user);
                 $this->handleDiscountAndVoucher();
                 $order = $this->orderRepository->create($this->data['order']);
@@ -536,7 +536,7 @@ class ShoppingCartService implements ShoppingCartServiceInterface
             $this->data['order']['total']
         );
         $this->orderDetails = [];
-        $this->prepareDataBuyNow($product, $this->data['qty'], $this->data['variation_id'] ?? null);
+        $this->prepareDataBuyNow($product, $this->data['qty'], $this->data['variation_id'] ?? null, $this->data['affiliate_code'] ?? null);
         try {
             if ($user) {
                 $this->data['order']['user_id'] = $user->id;
@@ -666,13 +666,10 @@ class ShoppingCartService implements ShoppingCartServiceInterface
         }
     }
 
-    private function prepareData($cartItems)
+    private function prepareData($cartItems, $affiliateCode = null)
     {
         $commissionRateSetting = $this->settingRepository->findByField('setting_key', 'commission_rate');
         $commissionRate = $commissionRateSetting ? $commissionRateSetting->plain_value : null;
-
-        // Lấy identifier để đọc cache
-        $identifier = $this->getAffiliateIdentifier();
 
         foreach ($cartItems as $item) {
             $item = (object) $item;
@@ -690,25 +687,12 @@ class ShoppingCartService implements ShoppingCartServiceInterface
                 $unitPrice = $productVariation->product->is_flash_sale ? $productVariation->flashsale_price : $productVariation->promotion_price;
             }
 
-            $affiliateCode = null;
             $affiliateEarning = 0;
 
-            if ($commissionRate !== null) {
-                // Lấy affiliate từ cache
-                $cacheKey = "affiliate_{$identifier}_{$product->id}";
-                $affiliateData = Cache::get($cacheKey);
-
-                // Kiểm tra thời gian hết hạn của affiliate_code (7 ngày)
-                if ($affiliateData) {
-                    $expiresAt = $affiliateData['expires_at'] ?? null;
-                    $isExpired = $expiresAt && $expiresAt < now()->timestamp;
-
-                    if (!$isExpired) {
-                        $affiliateCode = $affiliateData['affiliate_code'] ?? null;
-                        $affiliateEarning = $unitPrice * $item->qty * $commissionRate / 100;
-                    }
-                }
+            if ($commissionRate !== null && $affiliateCode !== null) {
+                $affiliateEarning = $unitPrice * $item->qty * $commissionRate / 100;
             }
+
             // Thêm vào orderDetails
             $this->orderDetails[] = [
                 'product_id' => $product->id,
@@ -724,7 +708,7 @@ class ShoppingCartService implements ShoppingCartServiceInterface
         }
     }
 
-    private function prepareDataBuyNow($product, $qty, $variation_id = null)
+    private function prepareDataBuyNow($product, $qty, $variation_id = null, $affiliateCode = null)
     {
         $commissionRateSetting = $this->settingRepository->findByField('setting_key', 'commission_rate');
         $commissionRate = $commissionRateSetting ? $commissionRateSetting->plain_value : null;
@@ -737,26 +721,12 @@ class ShoppingCartService implements ShoppingCartServiceInterface
             $unitPrice = $productVariation->product->is_flash_sale ? $productVariation->flashsale_price : $productVariation->promotion_price;
         }
 
-        $affiliateCode = null;
         $affiliateEarning = 0;
 
-        if ($commissionRate !== null) {
-            // Lấy identifier để đọc cache
-            $identifier = $this->getAffiliateIdentifier();
-            $cacheKey = "affiliate_{$identifier}_{$product->id}";
-            $affiliateData = Cache::get($cacheKey);
-
-            // Kiểm tra thời gian hết hạn của affiliate_code (7 ngày)
-            if ($affiliateData) {
-                $expiresAt = $affiliateData['expires_at'] ?? null;
-                $isExpired = $expiresAt && $expiresAt < now()->timestamp;
-
-                if (!$isExpired) {
-                    $affiliateCode = $affiliateData['affiliate_code'] ?? null;
-                    $affiliateEarning = $unitPrice * $qty * $commissionRate / 100;
-                }
-            }
+        if ($commissionRate !== null && $affiliateCode !== null) {
+            $affiliateEarning = $unitPrice * $qty * $commissionRate / 100;
         }
+
         // Thêm vào orderDetails
         $this->orderDetails[] = [
             'product_id' => $product->id,

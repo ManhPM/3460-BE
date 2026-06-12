@@ -276,7 +276,6 @@ class ProductController extends Controller
      */
     public function show($id, Request $request)
     {
-        $this->handleAffiliateCode($request, $id);
         try {
             $product = $this->repository->findOrFailWithRelations($id, [
                 'productAttributes',

@@ -31,6 +31,7 @@ class CheckoutRequest extends BaseRequest
             'discount_code' => ['nullable', 'exists:App\Models\Discount,code'],
             'voucher_shipping_id' => ['nullable', 'exists:vouchers,id'],
             'voucher_product_id' => ['nullable', 'exists:vouchers,id'],
+            'affiliate_code' => ['nullable', 'string', 'exists:users,affiliate_code'],
             'order.payment_method' => ['required', new Enum(PaymentMethod::class)],
             'order.payment_image' => ['nullable'],
             'order.email' => ['nullable'],
@@ -55,6 +56,13 @@ class CheckoutRequest extends BaseRequest
     protected function withValidator($validator)
     {
         $validator->after(function ($validator) {
+            if ($this->input('affiliate_code')) {
+                $affiliateUser = \App\Models\User::where('affiliate_code', $this->input('affiliate_code'))->first();
+                if ($affiliateUser && auth('sanctum')->check() && auth('sanctum')->id() === $affiliateUser->id) {
+                    $validator->errors()->add('affiliate_code', __('Mã giới thiệu không thể là của chính bạn.'));
+                }
+            }
+
             $discount = Discount::where('code', $this->discount_code)->first();
             if ($discount) {
                 if ($discount->max_usage <= 0) {

@@ -47,14 +47,6 @@
 
 @push('custom-js')
     <script>
-        document.getElementById('import-button').addEventListener('click', function() {
-            document.getElementById('excel_file').click();
-        });
-
-        document.getElementById('excel_file').addEventListener('change', function() {
-            this.closest('form').submit();
-        });
-
         document.getElementById('export-button').addEventListener('click', function() {
             window.location.href = "{{ route('admin.product.export') }}";
         });
