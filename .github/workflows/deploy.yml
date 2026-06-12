@@ -29,7 +29,7 @@ jobs:
         run: |
           BRANCH="${{ github.ref_name }}"
 
-          TARGET_DIR="/home/app3340/domains/3340.mevivu.net/public_html"
+          TARGET_DIR="/home/app3460/domains/3460.mevivu.net/public_html"
 
           # 1. Sync files from Runner -> Server
           rsync -avz \
@@ -38,6 +38,6 @@ jobs:
             --exclude='.git' \
             --exclude='.github' \
             -e "ssh -p 7878 -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519" \
-            ./ app3340@103.90.235.155:$TARGET_DIR/
+            ./ app3460@103.90.235.155:$TARGET_DIR/
 
           echo "✅ Deployment Complete!"
