@@ -37,7 +37,7 @@ jobs:
             --exclude='storage' \
             --exclude='.git' \
             --exclude='.github' \
-            -e "ssh -p 7878 -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519" \
-            ./ app3460@103.90.235.155:$TARGET_DIR/
+            -e "ssh -p 24700 -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519" \
+            ./ app3460@103.57.220.198:$TARGET_DIR/
 
           echo "✅ Deployment Complete!"

@@ -181,4 +181,30 @@ class User extends Authenticatable implements JWTSubject
             ->values() // Lấy mảng tuần tự
             ->all();  // Chuyển đổi thành mảng
     }
+
+    /**
+     * Tính tổng số tiền tiết kiệm (giảm giá) của người dùng trong tháng hiện tại
+     * từ các đơn hàng không bị hủy.
+     *
+     * @return float
+     */
+    public function getMonthlySavingsAttribute()
+    {
+        $currentMonth = now()->month;
+        $currentYear = now()->year;
+
+        return (float) \App\Models\Order::where('user_id', $this->id)
+            ->where('status', '!=', \App\Enums\Order\OrderStatus::Cancelled->value)
+            ->whereMonth('created_at', $currentMonth)
+            ->whereYear('created_at', $currentYear)
+            ->selectRaw('SUM(
+                COALESCE(discount_value, 0) + 
+                COALESCE(voucher_shipping_discount_value, 0) + 
+                COALESCE(voucher_product_discount_value, 0) + 
+                COALESCE(points_discount_value, 0) + 
+                COALESCE(membership_discount_value, 0)
+            ) as total_savings')
+            ->value('total_savings') ?? 0.0;
+    }
 }
+

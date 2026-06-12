@@ -26,6 +26,7 @@ class AuthResource extends JsonResource
             'bank_account_number' => $this->bank_account_number,
             'affiliate_code' => $this->affiliate_code,
             'wallet_balance' => $this->wallet_balance,
+            'monthly_savings' => $this->monthly_savings,
         ];
         return $data;
     }

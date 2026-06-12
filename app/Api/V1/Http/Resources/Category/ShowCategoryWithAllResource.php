@@ -40,7 +40,7 @@ class ShowCategoryWithAllResource extends JsonResource
         });
         $array_id = array_column($this->descendants->toArray(), 'id');
         array_push($array_id, $this->id);
-        $products = $this->repositoryProduct->getByCategoriesWithRelations($array_id, ['productVariations'], $request->input('limit', 8), $request->input('page', 1));
+        $products = $this->repositoryProduct->getByCategoriesWithRelations($array_id, ['productVariations', 'productVariations.attributeVariations'], $request->input('limit', 8), $request->input('page', 1));
         $data['products'] = new AllProductResource($products);
         return $data;
     }

@@ -12,6 +12,14 @@ class AllProductResource extends ResourceCollection
     public function toArray($request)
     {
         return  $this->collection->map(function ($product) {
+            $variantName = 'Mặc định';
+            if ($product->type == ProductType::Variable && $product->productVariations && $product->productVariations->isNotEmpty()) {
+                $firstVariation = $product->productVariations->first();
+                if ($firstVariation && $firstVariation->attributeVariations && $firstVariation->attributeVariations->isNotEmpty()) {
+                    $variantName = $firstVariation->attributeVariations->pluck('name')->implode(', ');
+                }
+            }
+
             $data = [
                 'id' => $product->id,
                 'name' => $product->name,
@@ -19,6 +27,7 @@ class AllProductResource extends ResourceCollection
                 'is_flash_sale' => false,
                 'avatar' => asset($product->avatar),
                 'avg_rating' => round($product->avg_rating, 1),
+                'variant_name' => $variantName,
             ];
             if ($product->is_flash_sale) {
                 $fsDetail = $product->is_flash_sale->details()
