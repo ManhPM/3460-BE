@@ -11,7 +11,7 @@ return [
     'format' => [
         'datetime' => 'd-m-Y H:i:s',
         'date' => 'd-m-Y',
-        'position_currency' => 'left'
+        'position_currency' => env('POSITION_CURRENCY', 'right')
     ],
-    'currency' => env('CURRENCY_SYMBOL', '¥')
+    'currency' => env('CURRENCY_SYMBOL', 'đ')
 ];
