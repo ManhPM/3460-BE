@@ -3,7 +3,11 @@
 <meta http-equiv="X-UA-Compatible" content="ie=edge" />
 <meta name="X-TOKEN" content="{{ csrf_token() }}">
 <title>@yield('title', 'Admin')</title>
-<link rel="shortcut icon" type="image/x-icon" href="{{ asset('assets/images/light-icon.png') }}" />
+@php
+    $settingRepository = app()->make(App\Admin\Repositories\Setting\SettingRepository::class);
+    $logo = $settingRepository->findByField('setting_key', 'site_icon')->plain_value;
+@endphp
+<link rel="shortcut icon" type="image/x-icon" href="{{ asset($logo) }}" />
 <!-- CSS files -->
 <link href="{{ asset('/public/libs/tabler/dist/css/tabler.min.css') }}" rel="stylesheet" />
 <link href="{{ asset('public/libs/jquery-toast-plugin/jquery.toast.min.css') }}" rel="stylesheet" type="text/css">
