@@ -176,4 +176,70 @@ class ProductService implements ProductServiceInterface
         }
         return $response;
     }
+
+    public function clearAllData()
+    {
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        DB::table('products')->truncate();
+        DB::table('products_categories')->truncate();
+        DB::table('products_attributes')->truncate();
+        DB::table('products_variations')->truncate();
+        DB::table('products_attributes_variations')->truncate();
+        DB::table('products_variations_variations')->truncate();
+        DB::table('admin_inventories')->truncate();
+        DB::table('flash_sales_products')->truncate();
+        DB::table('reviews')->truncate();
+        DB::table('wishlists')->truncate();
+        DB::table('shopping_cart')->truncate();
+        DB::table('order_details')->truncate();
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        return true;
+    }
+
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => ['required', 'file', 'mimes:xlsx,xls', 'max:10240'],
+        ]);
+
+        $file = $request->file('file');
+        $data = \Maatwebsite\Excel\Facades\Excel::toArray(new class implements \Maatwebsite\Excel\Concerns\WithCalculatedFormulas {}, $file);
+
+        $rows = $data[0] ?? [];
+        array_shift($rows); // bỏ dòng header
+
+        if (empty($rows)) {
+            throw new Exception('File không có dữ liệu.');
+        }
+
+        $count = 0;
+        foreach ($rows as $row) {
+            $name = trim($row[0] ?? '');
+            $price = trim($row[1] ?? 0);
+            $promotionPrice = trim($row[2] ?? 0);
+            $qty = trim($row[3] ?? 0);
+            $desc = trim($row[4] ?? '');
+
+            if (empty($name)) {
+                continue;
+            }
+
+            // Tạo sản phẩm
+            $productData = [
+                'name' => $name,
+                'price' => (float)$price,
+                'promotion_price' => empty($promotionPrice) ? null : (float)$promotionPrice,
+                'qty' => (int)$qty,
+                'desc' => $desc,
+                'type' => ProductType::Simple,
+                'is_active' => 1,
+                'is_featured' => \App\Enums\DefaultActiveStatus::Active,
+            ];
+
+            $this->repository->create($productData);
+            $count++;
+        }
+
+        return $count;
+    }
 }

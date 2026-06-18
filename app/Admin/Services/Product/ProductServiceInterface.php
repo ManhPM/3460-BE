@@ -32,4 +32,18 @@ interface ProductServiceInterface
      */
     public function delete($id);
 
+    /**
+     * Xóa sạch toàn bộ sản phẩm và bảng liên quan
+     * 
+     * @return boolean
+     */
+    public function clearAllData();
+
+    /**
+     * Nhập sản phẩm từ file Excel
+     * 
+     * @param Request $request
+     * @return int Số lượng sản phẩm đã nhập thành công
+     */
+    public function import(Request $request);
 }

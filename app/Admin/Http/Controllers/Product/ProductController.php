@@ -17,6 +17,8 @@ use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use App\Exports\ProductTemplateExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ProductController extends Controller
 {
@@ -179,5 +181,25 @@ class ProductController extends Controller
         return response()->json([
             'status' => true,
         ], 200);
+    }
+
+    public function export()
+    {
+        return Excel::download(new ProductTemplateExport, 'mau_nhap_san_pham.xlsx');
+    }
+
+    public function import(Request $request)
+    {
+        return $this->handleStoreResponse($request, function ($request) {
+            $count = $this->service->import($request);
+            return (object) ['id' => $count];
+        }, null);
+    }
+
+    public function clear()
+    {
+        return $this->handleDeleteResponse(null, function () {
+            return $this->service->clearAllData();
+        }, $this->route['index']);
     }
 }
