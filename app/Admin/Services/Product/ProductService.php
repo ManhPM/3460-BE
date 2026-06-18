@@ -231,7 +231,7 @@ class ProductService implements ProductServiceInterface
                 'price' => (float)$price,
                 'promotion_price' => empty($promotionPrice) ? null : (float)$promotionPrice,
                 'desc' => $desc,
-                'avatar' => '/userfiles/images/popup/logo.png',
+                'avatar' => '/public/assets/images/logo.png',
                 'type' => ProductType::Simple,
                 'is_active' => 1,
                 'is_featured' => \App\Enums\DefaultActiveStatus::Active,
