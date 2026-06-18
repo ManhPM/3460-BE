@@ -229,14 +229,26 @@ class ProductService implements ProductServiceInterface
                 'name' => $name,
                 'price' => (float)$price,
                 'promotion_price' => empty($promotionPrice) ? null : (float)$promotionPrice,
-                'qty' => (int)$qty,
                 'desc' => $desc,
                 'type' => ProductType::Simple,
                 'is_active' => 1,
                 'is_featured' => \App\Enums\DefaultActiveStatus::Active,
             ];
 
-            $this->repository->create($productData);
+            $product = $this->repository->create($productData);
+
+            // Lưu số lượng vào tồn kho của chi nhánh hiện tại
+            $adminId = auth('admin')->id();
+            if ($adminId) {
+                \App\Models\AdminInventory::updateOrCreate([
+                    'admin_id' => $adminId,
+                    'product_id' => $product->id,
+                    'product_variation_id' => null,
+                ], [
+                    'qty' => (int)$qty
+                ]);
+            }
+
             $count++;
         }
 
