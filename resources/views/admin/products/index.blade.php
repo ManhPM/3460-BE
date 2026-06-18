@@ -85,10 +85,6 @@
 
 @push('custom-js')
     <script>
-        document.getElementById('export-button').addEventListener('click', function() {
-            window.location.href = "{{ route('admin.product.export') }}";
-        });
-
         $(document).on('click', '.btn-reset-product', function(e) {
             e.preventDefault();
             Swal.fire({
