@@ -217,7 +217,8 @@ class ProductService implements ProductServiceInterface
             $name = trim($row[0] ?? '');
             $price = trim($row[1] ?? 0);
             $promotionPrice = trim($row[2] ?? 0);
-            $qty = trim($row[3] ?? 0);
+            $rawQty = $row[3] ?? 0;
+            $qty = (is_numeric($rawQty) && (float)$rawQty == (int)$rawQty) ? (int)$rawQty : 0;
             $desc = trim($row[4] ?? '');
 
             if (empty($name)) {
@@ -230,6 +231,7 @@ class ProductService implements ProductServiceInterface
                 'price' => (float)$price,
                 'promotion_price' => empty($promotionPrice) ? null : (float)$promotionPrice,
                 'desc' => $desc,
+                'avatar' => '/userfiles/images/popup/logo.png',
                 'type' => ProductType::Simple,
                 'is_active' => 1,
                 'is_featured' => \App\Enums\DefaultActiveStatus::Active,
@@ -237,16 +239,34 @@ class ProductService implements ProductServiceInterface
 
             $product = $this->repository->create($productData);
 
-            // Lưu số lượng vào tồn kho của chi nhánh hiện tại
-            $adminId = auth('admin')->id();
-            if ($adminId) {
-                \App\Models\AdminInventory::updateOrCreate([
-                    'admin_id' => $adminId,
-                    'product_id' => $product->id,
-                    'product_variation_id' => null,
-                ], [
-                    'qty' => (int)$qty
-                ]);
+            // Lưu số lượng vào tồn kho của chi nhánh
+            $admin = auth('admin')->user();
+            if ($admin) {
+                if ($admin->id == 1 || $admin->hasRole('superAdmin')) {
+                    // Nếu là super admin, gán tồn kho cho tất cả các chi nhánh (role branch)
+                    $branches = \App\Models\Admin::whereHas('roles', function ($q) {
+                        $q->where('name', 'branch');
+                    })->get();
+
+                    foreach ($branches as $branch) {
+                        \App\Models\AdminInventory::updateOrCreate([
+                            'admin_id' => $branch->id,
+                            'product_id' => $product->id,
+                            'product_variation_id' => null,
+                        ], [
+                            'qty' => $qty
+                        ]);
+                    }
+                } else {
+                    // Nếu là admin chi nhánh, gán tồn kho cho chính chi nhánh đó
+                    \App\Models\AdminInventory::updateOrCreate([
+                        'admin_id' => $admin->id,
+                        'product_id' => $product->id,
+                        'product_variation_id' => null,
+                    ], [
+                        'qty' => $qty
+                    ]);
+                }
             }
 
             $count++;

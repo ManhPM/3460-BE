@@ -23,20 +23,7 @@
                                 <input type="hidden" id="admin_id" value="{{ (int) $selectedAdminId }}" />
                             @endif
 
-                            {{-- Nút import Excel --}}
-                            <button type="button" class="btn btn-success d-flex align-items-center gap-1"
-                                data-bs-toggle="modal" data-bs-target="#modalImportExcel">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                    <path d="M14 3v4a1 1 0 0 0 1 1h4" />
-                                    <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" />
-                                    <path d="M12 17v-6" />
-                                    <path d="M9.5 14.5l2.5 2.5l2.5 -2.5" />
-                                </svg>
-                                {{ __('Cập nhật từ Excel') }}
-                            </button>
+
                         </div>
                     </div>
                 </div>
@@ -73,84 +60,7 @@
         </div>
     </div>
 
-    {{-- ══════════════════════════════════════════════════════════════════════
-         Modal Import Excel
-    ══════════════════════════════════════════════════════════════════════ --}}
-    <div class="modal modal-blur fade" id="modalImportExcel" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog modal-md modal-dialog-centered" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" class="me-2 text-success"
-                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                            stroke-linecap="round" stroke-linejoin="round">
-                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                            <path d="M14 3v4a1 1 0 0 0 1 1h4" />
-                            <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" />
-                            <path d="M12 17v-6" />
-                            <path d="M9.5 14.5l2.5 2.5l2.5 -2.5" />
-                        </svg>
-                        {{ __('Cập nhật tồn kho từ Excel') }}
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    {{-- Hướng dẫn định dạng --}}
-                    <div class="alert alert-info mb-3 py-2 small">
-                        <strong>Định dạng file Excel (.xlsx/.xls):</strong><br>
-                        Cột <strong>E (col 5)</strong>: Tên hàng &nbsp;|&nbsp;
-                        Cột <strong>F (col 6)</strong>: Tồn kho &nbsp;|&nbsp;
-                        Cột <strong>G (col 7)</strong>: ĐVT (Gói/Lon/Hộp...)<br>
-                        <span class="text-muted">Dòng đầu tiên là header, bỏ qua tự động.</span>
-                    </div>
 
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">{{ __('Chọn file Excel') }}
-                            <span class="text-danger">*</span>
-                        </label>
-                        <input type="file" id="importExcelFile" class="form-control"
-                            accept=".xlsx,.xls" />
-                        <div class="form-text">Chỉ chấp nhận file .xlsx, .xls — tối đa 10 MB</div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">{{ __('Chế độ cập nhật') }}</label>
-                        <div class="d-flex gap-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="importMode"
-                                    id="modeSet" value="set" checked>
-                                <label class="form-check-label" for="modeSet">
-                                    <strong>Ghi đè</strong>
-                                    <span class="text-muted small d-block">Đặt lại số lượng tồn theo file</span>
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="importMode"
-                                    id="modeAdd" value="add">
-                                <label class="form-check-label" for="modeAdd">
-                                    <strong>Cộng dồn</strong>
-                                    <span class="text-muted small d-block">Cộng thêm vào tồn hiện tại</span>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- Kết quả sau import --}}
-                    <div id="importResult" style="display:none"></div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        {{ __('Đóng') }}
-                    </button>
-                    <button type="button" id="btnDoImport" class="btn btn-success">
-                        <span id="importBtnSpinner" class="spinner-border spinner-border-sm me-1" role="status"
-                            style="display:none"></span>
-                        {{ __('Cập nhật tồn kho') }}
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
 @endsection
 
 @push('libs-js')
@@ -287,111 +197,7 @@
                 });
             }
 
-            // ── Import Excel ──────────────────────────────────────────────────────
 
-            const $btnDoImport   = document.getElementById('btnDoImport');
-            const $importFile    = document.getElementById('importExcelFile');
-            const $importResult  = document.getElementById('importResult');
-            const $importSpinner = document.getElementById('importBtnSpinner');
-
-            // Reset modal mỗi khi mở
-            document.getElementById('modalImportExcel').addEventListener('show.bs.modal', function() {
-                $importFile.value = '';
-                $importResult.style.display = 'none';
-                $importResult.innerHTML = '';
-                document.getElementById('modeSet').checked = true;
-            });
-
-            $btnDoImport.addEventListener('click', function() {
-                const file = $importFile.files[0];
-                if (!file) {
-                    showToastify('error', 'Lỗi', 'Vui lòng chọn file Excel.');
-                    return;
-                }
-
-                const adminId = document.getElementById('admin_id').value;
-                if (!adminId) {
-                    showToastify('error', 'Lỗi', 'Vui lòng chọn chi nhánh trước.');
-                    return;
-                }
-
-                const mode = document.querySelector('input[name="importMode"]:checked').value;
-
-                const formData = new FormData();
-                formData.append('file', file);
-                formData.append('admin_id', adminId);
-                formData.append('mode', mode);
-                formData.append('_token', '{{ csrf_token() }}');
-
-                // Loading state
-                $btnDoImport.disabled = true;
-                $importSpinner.style.display = 'inline-block';
-                $importResult.style.display = 'none';
-                $importResult.innerHTML = '';
-
-                $.ajax({
-                    url: '{{ route('admin.inventory.import_excel') }}',
-                    method: 'POST',
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    dataType: 'json',
-                    success: function(res) {
-                        let notFoundHtml = '';
-                        if (res.not_found > 0 && res.not_found_list && res.not_found_list.length > 0) {
-                            const items = res.not_found_list
-                                .map(item => `<li class="small">${item}</li>`)
-                                .join('');
-                            notFoundHtml = `
-                                <div class="mt-2">
-                                    <button class="btn btn-sm btn-link p-0 text-warning" type="button"
-                                        data-bs-toggle="collapse" data-bs-target="#notFoundList">
-                                        Xem danh sách không tìm thấy (${res.not_found})
-                                    </button>
-                                    <div class="collapse mt-1" id="notFoundList">
-                                        <ul class="mb-0 text-muted" style="max-height:200px;overflow-y:auto">${items}</ul>
-                                    </div>
-                                </div>`;
-                        }
-
-                        $importResult.innerHTML = `
-                            <div class="alert alert-success mb-0">
-                                <div class="fw-semibold mb-1">✅ ${res.message}</div>
-                                <div class="d-flex gap-3 flex-wrap small">
-                                    <span>✏️ Cập nhật: <strong>${res.updated}</strong></span>
-                                    <span>➕ Tạo mới: <strong>${res.created}</strong></span>
-                                    <span>⏭️ Bỏ qua: <strong>${res.skipped}</strong></span>
-                                    <span class="${res.not_found > 0 ? 'text-warning fw-semibold' : ''}">
-                                        ❌ Không tìm thấy: <strong>${res.not_found}</strong>
-                                    </span>
-                                </div>
-                                ${notFoundHtml}
-                            </div>`;
-                        $importResult.style.display = 'block';
-
-                        // Reload bảng dữ liệu
-                        fetchData(1);
-                        showToastify('success', 'Thành công', res.message);
-                    },
-                    error: function(xhr) {
-                        let msg = 'Có lỗi xảy ra khi xử lý file.';
-                        try {
-                            const json = JSON.parse(xhr.responseText);
-                            if (json.message) msg = json.message;
-                            if (json.errors) {
-                                msg = Object.values(json.errors).flat().join('<br>');
-                            }
-                        } catch (_) {}
-                        $importResult.innerHTML = `<div class="alert alert-danger mb-0">${msg}</div>`;
-                        $importResult.style.display = 'block';
-                        showToastify('error', 'Lỗi', 'Không thể cập nhật tồn kho.');
-                    },
-                    complete: function() {
-                        $btnDoImport.disabled = false;
-                        $importSpinner.style.display = 'none';
-                    }
-                });
-            });
 
             // ── Event listeners ban đầu ───────────────────────────────────────────
 
