@@ -202,4 +202,11 @@ class ProductController extends Controller
             return $this->service->clearAllData();
         }, $this->route['index']);
     }
+
+    public function seed()
+    {
+        return $this->handleStoreResponse(request(), function () {
+            return $this->service->seedData();
+        }, null);
+    }
 }

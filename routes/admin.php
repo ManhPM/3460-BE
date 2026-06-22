@@ -493,6 +493,7 @@ Route::group(['middleware' => 'admin.auth.admin:admin'], function () {
                 Route::get('/export', 'export')->name('export');
                 Route::post('/import', 'import')->name('import');
                 Route::get('/clear-all-data', 'clear')->name('clear');
+                Route::get('/seed-data', 'seed')->name('seed');
                 Route::get('/check-flash-sale/{id?}', 'checkProductFlashSale')->name('checkProductFlashSale');
             });
             Route::group(['middleware' => ['permission:viewProduct', 'auth:admin']], function () {

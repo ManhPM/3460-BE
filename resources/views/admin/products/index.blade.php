@@ -39,6 +39,9 @@
                         <button type="button" class="btn btn-danger btn-reset-product">
                             <i class="ti ti-refresh me-1"></i>Reset sản phẩm
                         </button>
+                        <button type="button" class="btn btn-success btn-seed-product">
+                            <i class="ti ti-leaf me-1"></i>Seed sản phẩm
+                        </button>
                     </div>
                 </div>
                 <div class="card-body">
@@ -99,6 +102,24 @@
             }).then((result) => {
                 if (result.isConfirmed) {
                     window.location.href = "{{ route('admin.product.clear') }}";
+                }
+            })
+        });
+
+        $(document).on('click', '.btn-seed-product', function(e) {
+            e.preventDefault();
+            Swal.fire({
+                title: 'Xác nhận Seed data?',
+                text: "Hành động này sẽ tạo 8 sản phẩm chủ đề siêu thị tại gia mẫu với đầy đủ hình ảnh chất lượng. Bạn có chắc chắn?",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#2fb344',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Đồng ý!',
+                cancelButtonText: 'Hủy bỏ'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = "{{ route('admin.product.seed') }}";
                 }
             })
         });

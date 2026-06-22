@@ -274,4 +274,127 @@ class ProductService implements ProductServiceInterface
 
         return $count;
     }
+
+    public function seedData()
+    {
+        $productsData = [
+            [
+                'name' => 'Sữa tươi tiệt trùng Vinamilk 1L',
+                'price' => 35000,
+                'promotion_price' => 32000,
+                'desc' => 'Sữa tươi tiệt trùng Vinamilk 100% Sữa tươi hộp 1L giàu dưỡng chất, vitamin và khoáng chất tự nhiên tốt cho sức khỏe.',
+                'avatar' => '/public/uploads/seed_milk.png',
+                'category_name' => 'Sữa',
+            ],
+            [
+                'name' => 'Mì ăn liền Hảo Hảo Tôm Chua Cay',
+                'price' => 4500,
+                'promotion_price' => 4000,
+                'desc' => 'Mì ăn liền Hảo Hảo hương vị Tôm Chua Cay truyền thống, sợi mì dai ngon hòa quyện nước súp chua cay đậm đà.',
+                'avatar' => '/public/uploads/seed_noodles.png',
+                'category_name' => 'Mì ăn liền , bún, miến , phở',
+            ],
+            [
+                'name' => 'Nước rửa chén Sunlight Chanh 750g',
+                'price' => 28000,
+                'promotion_price' => 25000,
+                'desc' => 'Nước rửa chén Sunlight Chanh đánh bay dầu mỡ nhanh chóng với sức mạnh từ chanh tươi tự nhiên, an toàn cho da tay.',
+                'avatar' => '/public/uploads/seed_dishwash.png',
+                'category_name' => 'Các sản phẩm khác',
+            ],
+            [
+                'name' => 'Trứng gà ta hộp 10 quả',
+                'price' => 40000,
+                'promotion_price' => 35000,
+                'desc' => 'Hộp 10 quả trứng gà ta sạch được tuyển chọn kỹ lưỡng, giàu protein và dưỡng chất cho bữa ăn gia đình.',
+                'avatar' => '/public/uploads/seed_eggs.png',
+                'category_name' => 'Các sản phẩm khác',
+            ],
+            [
+                'name' => 'Dầu ăn Simply đậu nành 1L',
+                'price' => 65000,
+                'promotion_price' => 60000,
+                'desc' => 'Dầu ăn Simply nguyên chất 100% từ hạt đậu nành tự nhiên, giàu Omega-3, 6, 9 tốt cho sức khỏe tim mạch.',
+                'avatar' => '/public/uploads/seed_cooking_oil.png',
+                'category_name' => 'Gia vị , nguyên liệu',
+            ],
+            [
+                'name' => 'Bánh mì gối cắt lát siêu mềm',
+                'price' => 22000,
+                'promotion_price' => 20000,
+                'desc' => 'Bánh mì gối cắt lát thơm ngon, mềm mịn, thích hợp làm bữa sáng tiện lợi, nhanh chóng cho cả nhà.',
+                'avatar' => '/public/uploads/seed_bread.png',
+                'category_name' => 'Các sản phẩm khác',
+            ],
+            [
+                'name' => 'Khoai tây chiên Lay\'s vị tự nhiên',
+                'price' => 18000,
+                'promotion_price' => 16000,
+                'desc' => 'Snack khoai tây chiên Lay\'s Classic giòn rụm từ khoai tây tươi tự nhiên chọn lọc kết hợp muối biển.',
+                'avatar' => '/public/uploads/seed_chips.png',
+                'category_name' => 'Bánh kẹo',
+            ],
+            [
+                'name' => 'Nước tinh khiết Aquafina 500ml',
+                'price' => 6000,
+                'promotion_price' => 5500,
+                'desc' => 'Nước uống tinh khiết Aquafina được xử lý qua hệ thống lọc tối tân Hydro-7, mang lại sự tinh khiết sảng khoái.',
+                'avatar' => '/public/uploads/seed_water.png',
+                'category_name' => 'Nước ngọt',
+            ],
+        ];
+
+        foreach ($productsData as $data) {
+            $categoryName = $data['category_name'];
+            $category = \App\Models\Category::where('name', 'like', "%{$categoryName}%")->first();
+            if (!$category) {
+                $slug = \Illuminate\Support\Str::slug($categoryName);
+                $originalSlug = $slug;
+                $count = 1;
+                while (\App\Models\Category::where('slug', $slug)->exists()) {
+                    $slug = $originalSlug . '-' . $count++;
+                }
+                $category = \App\Models\Category::create([
+                    'name' => $categoryName,
+                    'slug' => $slug,
+                    'is_active' => 1,
+                    'is_home' => 1,
+                ]);
+            }
+
+            $slug = \Illuminate\Support\Str::slug($data['name']);
+            $originalProductSlug = $slug;
+            $count = 1;
+            while ($this->repository->getModel()::where('slug', $slug)->exists()) {
+                $slug = $originalProductSlug . '-' . $count++;
+            }
+
+            $product = $this->repository->create([
+                'name' => $data['name'],
+                'slug' => $slug,
+                'price' => $data['price'],
+                'promotion_price' => $data['promotion_price'],
+                'desc' => $data['desc'],
+                'avatar' => $data['avatar'],
+                'type' => ProductType::Simple,
+                'is_active' => 1,
+                'is_featured' => \App\Enums\DefaultActiveStatus::Active,
+            ]);
+
+            $this->repository->attachCategories($product, [$category->id]);
+
+            $admins = \App\Models\Admin::all();
+            foreach ($admins as $admin) {
+                \App\Models\AdminInventory::updateOrCreate([
+                    'admin_id' => $admin->id,
+                    'product_id' => $product->id,
+                    'product_variation_id' => null,
+                ], [
+                    'qty' => 100
+                ]);
+            }
+        }
+
+        return true;
+    }
 }

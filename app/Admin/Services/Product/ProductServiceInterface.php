@@ -46,4 +46,11 @@ interface ProductServiceInterface
      * @return int Số lượng sản phẩm đã nhập thành công
      */
     public function import(Request $request);
+
+    /**
+     * Seed 8 sản phẩm siêu thị tại gia
+     * 
+     * @return mixed
+     */
+    public function seedData();
 }
