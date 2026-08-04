@@ -17,14 +17,17 @@ class ProductAttributeRepository extends EloquentRepository implements ProductAt
     }
     public function createOrUpdateWithVariation($product_id, array $productAttribute)
     {
-        foreach ($productAttribute['attribute_id'] as $key => $value) {
-            $this->model->updateOrCreate([
-                'product_id' => $product_id,
-                'attribute_id' => $value,
-            ], [
-                'position' => $key
-            ])->attribute_variations()
-                ->sync($productAttribute['attribute_variation_id'][$value]);
+        if (isset($productAttribute['attribute_id']) && is_array($productAttribute['attribute_id'])) {
+            foreach ($productAttribute['attribute_id'] as $key => $value) {
+                $variations = $productAttribute['attribute_variation_id'][$value] ?? [];
+                $this->model->updateOrCreate([
+                    'product_id' => $product_id,
+                    'attribute_id' => $value,
+                ], [
+                    'position' => $key
+                ])->attribute_variations()
+                    ->sync($variations);
+            }
         }
     }
 
