@@ -2,7 +2,7 @@
 return [
     'images' => [
         'favicon' => '/public/assets/images/logo.png',
-        'avatar' => '/public/assets/images/avatar-user.png',
+        'avatar' => '/public/assets/images/logo.png',
         'default' => '/public/assets/images/no-image.png',
         'logo' => '/public/assets/images/logo.png',
         'norecord' => '/public/assets/images/norecord.svg',

@@ -39,7 +39,7 @@ return new class extends Migration
             'username' => 'admin',
             'fullname' => 'Admin',
             'email' => 'admin@gmail.com',
-            'avatar' => config('custom.images.avatarUser'),
+            'avatar' => '/public/assets/images/logo.png',
             'password' => bcrypt('123456'),
             'created_at' => DB::raw('NOW()'),
             'updated_at' => DB::raw('NOW()')
