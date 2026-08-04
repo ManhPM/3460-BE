@@ -23,13 +23,20 @@
         const form = document.querySelector('form'); // Chọn biểu mẫu của bạn
 
         form.addEventListener('submit', function(event) {
-            const price = parseFloat(document.querySelector('#product\\[price\\]-hidden').value);
-            const promotionPrice = parseFloat(document.querySelector(
-                '#product\\[promotion_price\\]-hidden').value);
-            if (price != 0 && promotionPrice != 0) {
-                if (promotionPrice >= price) {
-                    event.preventDefault();
-                    showToastify('error', 'Lỗi', 'Giá khuyến mãi phải nhỏ hơn giá bán thường.');
+            const isContactPriceSwitch = document.querySelector('input[name="product[is_contact_price]"][type="checkbox"]');
+            const isContactPrice = isContactPriceSwitch ? isContactPriceSwitch.checked : false;
+
+            if (!isContactPrice) {
+                const priceHidden = document.querySelector('#product\\[price\\]-hidden');
+                const promotionPriceHidden = document.querySelector('#product\\[promotion_price\\]-hidden');
+                const price = priceHidden ? (parseFloat(priceHidden.value) || 0) : 0;
+                const promotionPrice = promotionPriceHidden ? (parseFloat(promotionPriceHidden.value) || 0) : 0;
+
+                if (price > 0 && promotionPrice > 0) {
+                    if (promotionPrice >= price) {
+                        event.preventDefault();
+                        showToastify('error', 'Lỗi', 'Giá khuyến mãi phải nhỏ hơn giá bán thường.');
+                    }
                 }
             }
         });

@@ -54,6 +54,8 @@ class ProductService implements ProductServiceInterface
     public function store(Request $request)
     {
         $this->data = $request->validated();
+        $this->data['product']['price'] = $this->data['product']['price'] ?? 0;
+        $this->data['product']['promotion_price'] = $this->data['product']['promotion_price'] ?? 0;
         $this->data['product']['gallery'] = $this->data['product']['gallery'] ? explode(",", $this->data['product']['gallery']) : null;
         $instance = $this->repository->create($this->data['product']);
         $this->repository->attachCategories($instance, $this->data['categories_id'] ?? []);
@@ -72,6 +74,8 @@ class ProductService implements ProductServiceInterface
     {
 
         $this->data = $request->validated();
+        $this->data['product']['price'] = $this->data['product']['price'] ?? 0;
+        $this->data['product']['promotion_price'] = $this->data['product']['promotion_price'] ?? 0;
 
         DB::beginTransaction();
         try {

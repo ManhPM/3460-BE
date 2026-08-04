@@ -35,9 +35,15 @@ class ProductRequest extends BaseRequest
             'product.is_contact_price' => ['required'],
             'product.gallery' => ['nullable'],
         ];
+        $isContactPrice = (bool) $this->input('product.is_contact_price');
         if ($this->input('product.type') == ProductType::Simple->value) {
-            $this->validate['product.price'] = ['required', 'numeric', 'min:1'];
-            $this->validate['product.promotion_price'] = ['required', 'numeric', 'min:1'];
+            if ($isContactPrice) {
+                $this->validate['product.price'] = ['nullable', 'numeric', 'min:0'];
+                $this->validate['product.promotion_price'] = ['nullable', 'numeric', 'min:0'];
+            } else {
+                $this->validate['product.price'] = ['required', 'numeric', 'min:1'];
+                $this->validate['product.promotion_price'] = ['nullable', 'numeric', 'min:0'];
+            }
         } elseif ($this->input('product.type') == ProductType::Variable->value) {
             $this->validate['product_attribute.attribute_id'] = ['nullable', 'array'];
             $this->validate['product_attribute.attribute_id.*'] = ['required', 'exists:App\Models\Attribute,id'];
@@ -53,7 +59,7 @@ class ProductRequest extends BaseRequest
                 $this->validate['products_variations.attribute_variation_id.*.*'] = ['required', 'exists:App\Models\AttributeVariation,id'];
                 $this->validate['products_variations.image'] = ['nullable', 'array'];
                 $this->validate['products_variations.price'] = ['nullable', 'array'];
-                $this->validate['products_variations.price.*'] = ['required', 'numeric'];
+                $this->validate['products_variations.price.*'] = $isContactPrice ? ['nullable', 'numeric'] : ['required', 'numeric'];
                 $this->validate['products_variations.promotion_price'] = ['nullable', 'array'];
                 $this->validate['products_variations.promotion_price.*'] = ['nullable', 'numeric'];
             }
@@ -78,8 +84,15 @@ class ProductRequest extends BaseRequest
             'product.is_contact_price' => ['required'],
             'product.gallery' => ['nullable'],
         ];
+        $isContactPrice = (bool) $this->input('product.is_contact_price');
         if ($this->input('product.type') == ProductType::Simple->value) {
-            $this->validate['product.price'] = ['required', 'numeric'];
+            if ($isContactPrice) {
+                $this->validate['product.price'] = ['nullable', 'numeric', 'min:0'];
+                $this->validate['product.promotion_price'] = ['nullable', 'numeric', 'min:0'];
+            } else {
+                $this->validate['product.price'] = ['required', 'numeric', 'min:1'];
+                $this->validate['product.promotion_price'] = ['nullable', 'numeric', 'min:0'];
+            }
         } elseif ($this->input('product.type') == ProductType::Variable->value) {
             $this->validate['product_attribute.attribute_id'] = ['nullable', 'array'];
             $this->validate['product_attribute.attribute_id.*'] = ['required', 'exists:App\Models\Attribute,id'];
@@ -95,7 +108,7 @@ class ProductRequest extends BaseRequest
                 $this->validate['products_variations.attribute_variation_id.*.*'] = ['required', 'exists:App\Models\AttributeVariation,id'];
                 $this->validate['products_variations.image'] = ['nullable', 'array'];
                 $this->validate['products_variations.price'] = ['nullable', 'array'];
-                $this->validate['products_variations.price.*'] = ['required', 'numeric'];
+                $this->validate['products_variations.price.*'] = $isContactPrice ? ['nullable', 'numeric'] : ['required', 'numeric'];
                 $this->validate['products_variations.promotion_price'] = ['nullable', 'array'];
                 $this->validate['products_variations.promotion_price.*'] = ['nullable', 'numeric'];
             }
