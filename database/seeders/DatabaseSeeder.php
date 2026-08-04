@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             SettingSeeder::class,
             PermissionSeeder::class,
             JapaneseAddressSeeder::class,
+            ShippingRateSeeder::class,
         ]);
     }
 }
