@@ -202,7 +202,8 @@ class User extends Authenticatable implements JWTSubject
                 COALESCE(voucher_shipping_discount_value, 0) + 
                 COALESCE(voucher_product_discount_value, 0) + 
                 COALESCE(points_discount_value, 0) + 
-                COALESCE(membership_discount_value, 0)
+                COALESCE(membership_discount_value, 0) +
+                COALESCE(membership_shipping_discount_value, 0)
             ) as total_savings')
             ->value('total_savings') ?? 0.0;
     }

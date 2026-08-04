@@ -57,7 +57,7 @@ class OrderDataTable extends BaseDataTable
             'id' => $this->view['editlink'],
             'admin' => $this->view['admin'],
             'status' => $this->view['status'],
-            'total' => '{{ format_price($total - $discount_value + $shipping_fee - $voucher_shipping_discount_value - $voucher_product_discount_value - $points_discount_value - $membership_discount_value) }}',
+            'total' => '{{ format_price($total - $discount_value + $shipping_fee - $voucher_shipping_discount_value - $voucher_product_discount_value - $points_discount_value - $membership_discount_value - $membership_shipping_discount_value) }}',
             'payment_method' => '{{ App\Enums\Payment\PaymentMethod::getDescription($payment_method) }}',
             'user' => $this->view['user'],
             'created_at' => '{{ format_datetime($created_at) }}',

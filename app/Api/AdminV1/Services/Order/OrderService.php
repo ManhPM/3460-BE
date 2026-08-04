@@ -172,7 +172,8 @@ class OrderService
                         - (($order->discount_value ?? 0)
                             + ($order->voucher_shipping_discount_value ?? 0)
                             + ($order->voucher_product_discount_value ?? 0)
-                            + ($order->membership_discount_value ?? 0));
+                            + ($order->membership_discount_value ?? 0)
+                            + ($order->membership_shipping_discount_value ?? 0));
 
                     $user = $order->user;
                     // Sử dụng increment để tránh race condition
@@ -275,7 +276,7 @@ class OrderService
                         if (($order->payment_method == \App\Enums\Payment\PaymentMethod::Wallet) && $order->user) {
                             $order->refresh();
                             $refundable = ($order->total + ($order->shipping_fee ?? 0))
-                                - (($order->discount_value ?? 0) + ($order->voucher_shipping_discount_value ?? 0) + ($order->voucher_product_discount_value ?? 0) + ($order->membership_discount_value ?? 0));
+                                - (($order->discount_value ?? 0) + ($order->voucher_shipping_discount_value ?? 0) + ($order->voucher_product_discount_value ?? 0) + ($order->membership_discount_value ?? 0) + ($order->membership_shipping_discount_value ?? 0));
                             $user = $order->user;
                             // Sử dụng increment để tránh race condition
                             $user->increment('wallet_balance', $refundable);

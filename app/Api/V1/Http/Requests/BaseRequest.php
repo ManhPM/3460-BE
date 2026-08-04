@@ -116,4 +116,9 @@ class BaseRequest extends FormRequest
             ], 400)
         );
     }
+
+    public function attributes()
+    {
+        return trans('validation.attributes');
+    }
 }

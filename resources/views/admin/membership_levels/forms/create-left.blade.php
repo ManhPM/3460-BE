@@ -23,6 +23,13 @@
                         placeholder="{{ __('Phần trăm giảm giá') }}" />
                 </div>
             </div>
+            <div class="col-md-3 col-12">
+                <div class="mb-3">
+                    <x-label text="{{ __('Giảm phí vận chuyển (đ)') }}" icon="ti ti-truck" />
+                    <x-input name="shipping_discount_amount" :value="$instance->shipping_discount_amount ?? old('shipping_discount_amount')"
+                        placeholder="{{ __('Số tiền giảm phí vận chuyển') }}" />
+                </div>
+            </div>
             <div class="col-md-2 col-12">
                 <div class="mb-3">
                     <x-label text="{{ __('Màu sắc 1') }}" icon="ti ti-box" />

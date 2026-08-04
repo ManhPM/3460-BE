@@ -5,7 +5,7 @@
     <div class="image-preview-container {{ $small ? 'is-small' : '' }}">
         <img id="{{ $showImage }}" class="add-image-ckfinder pointer image-preview {{ $small ? 'is-small' : '' }}"
             data-preview="#{{ $showImage }}" data-input="input[name='{{ $name }}']" data-type=""
-            src="{{ asset($value) }}" alt="Preview Image">
+            src="{{ asset($value ? $value : 'assets/images/default.png') }}" alt="Preview Image">
     </div>
 </div>
 

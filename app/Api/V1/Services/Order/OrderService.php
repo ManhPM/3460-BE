@@ -121,7 +121,7 @@ class OrderService implements OrderServiceInterface
 
         $order->refresh();
         $refundable = ($order->total + ($order->shipping_fee ?? 0))
-            - (($order->discount_value ?? 0) + ($order->voucher_shipping_discount_value ?? 0) + ($order->voucher_product_discount_value ?? 0) + ($order->membership_discount_value ?? 0));
+            - (($order->discount_value ?? 0) + ($order->voucher_shipping_discount_value ?? 0) + ($order->voucher_product_discount_value ?? 0) + ($order->membership_discount_value ?? 0) + ($order->membership_shipping_discount_value ?? 0));
 
         $user = $order->user;
         $this->userRepository->update($user->id, ['wallet_balance' => $user->wallet_balance + $refundable]);
@@ -150,7 +150,8 @@ class OrderService implements OrderServiceInterface
             ($order->shipping_fee ?? 0) -
             ($order->voucher_product_discount_value ?? 0) -
             ($order->voucher_shipping_discount_value ?? 0) -
-            ($order->membership_discount_value ?? 0);
+            ($order->membership_discount_value ?? 0) -
+            ($order->membership_shipping_discount_value ?? 0);
 
         // Tạo mã QR dựa trên order_id
         $bankCode = $bank->code;
@@ -184,7 +185,8 @@ class OrderService implements OrderServiceInterface
             ($order->shipping_fee ?? 0) -
             ($order->voucher_product_discount_value ?? 0) -
             ($order->voucher_shipping_discount_value ?? 0) -
-            ($order->membership_discount_value ?? 0);
+            ($order->membership_discount_value ?? 0) -
+            ($order->membership_shipping_discount_value ?? 0);
 
         $bankCode = $bank->code;
         $accountNumber = $bank->bank_account_number;

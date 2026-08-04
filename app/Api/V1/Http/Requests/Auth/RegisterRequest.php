@@ -31,6 +31,7 @@ class RegisterRequest extends BaseRequest
             ],
             'email' => ['required', 'email'],
             'password' => ['required', 'string'],
+            'referrer_code' => ['nullable', 'string', 'exists:users,affiliate_code'],
         ];
     }
 
@@ -67,6 +68,7 @@ class RegisterRequest extends BaseRequest
             'password.required' => __('please_enter_password'),
             'password.min' => __('password_min'),
             'password.confirmed' => __('password_confirmed'),
+            'referrer_code.exists' => __('affiliate_code_not_found'),
             'bank_name.required_if' => __('please_enter_bank_name'),
             'bank_account_number.required_if' => __('please_enter_bank_account_number'),
             'bank_account.required_if' => __('please_enter_bank_account'),

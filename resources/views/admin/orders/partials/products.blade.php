@@ -49,6 +49,7 @@
     $orderVoucherProduct = $order->voucher_product_discount_value ?? 0;
     $orderPointsDiscountValue = $order->points_discount_value ?? 0;
     $orderMembershipDiscountValue = $order->membership_discount_value ?? 0;
+    $orderMembershipShippingDiscountValue = $order->membership_shipping_discount_value ?? 0;
     $orderFinalTotal =
         $orderTotal +
         $orderShippingFee -
@@ -56,7 +57,8 @@
         $orderVoucherShipping -
         $orderVoucherProduct -
         $orderPointsDiscountValue -
-        $orderMembershipDiscountValue;
+        $orderMembershipDiscountValue -
+        $orderMembershipShippingDiscountValue;
 @endphp
 @include('admin.orders.partials.total', [
     'total' => $orderTotal,
@@ -67,5 +69,6 @@
     'voucher_product_discount_value' => $orderVoucherProduct,
     'points_discount_value' => $orderPointsDiscountValue,
     'membership_discount_value' => $orderMembershipDiscountValue,
+    'membership_shipping_discount_value' => $orderMembershipShippingDiscountValue,
     'final_total' => $orderFinalTotal,
 ])

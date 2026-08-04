@@ -27,6 +27,7 @@ class ShowOrderResource extends JsonResource
             'member_ship_points_earned' => $this->member_ship_points_earned ?? 0,
             'membership_discount_percentage' => $this->membership_discount_percentage ?? 0,
             'membership_discount_value' => $this->membership_discount_value ?? 0,
+            'membership_shipping_discount_value' => $this->membership_shipping_discount_value ?? 0,
 
             'customer_fullname' => $this->fullname,
             'customer_phone' => $this->phone,

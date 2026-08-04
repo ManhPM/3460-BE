@@ -522,6 +522,7 @@ class ShoppingCartController extends Controller
                 ],
                 'membership_discount_percentage' => 0,
                 'membership_discount_value' => 0,
+                'membership_shipping_discount_value' => 0,
                 'total_discount' => 0,
                 'final_total' => $subtotal,
             ]
@@ -545,6 +546,7 @@ class ShoppingCartController extends Controller
         // Tính membership discount
         $membershipDiscountPercentage = 0;
         $membershipDiscountValue = 0;
+        $membershipShippingDiscountValue = 0;
         if ($user && $user->membership_id) {
             if (!$user->relationLoaded('member')) {
                 $user->load('member');
@@ -552,11 +554,14 @@ class ShoppingCartController extends Controller
             if ($user->member) {
                 $membershipDiscountPercentage = $user->member->discount_percentage ?? 0;
                 $membershipDiscountValue = round($subtotal * ($membershipDiscountPercentage / 100));
+                
+                $shippingDiscountAmount = $user->member->shipping_discount_amount ?? 0;
+                $membershipShippingDiscountValue = min($shippingDiscountAmount, $shippingFee);
             }
         }
 
         // Tổng giảm giá (không bao gồm points)
-        $totalDiscount = $discountValue + $voucherProductValue + $voucherShippingValue + $membershipDiscountValue;
+        $totalDiscount = $discountValue + $voucherProductValue + $voucherShippingValue + $membershipDiscountValue + $membershipShippingDiscountValue;
 
         // Tổng tiền cuối cùng (sau khi trừ tất cả discount và points, cộng shipping)
         $finalTotal = $subtotal - $totalDiscount - $pointsDiscount['value'] + $shippingFee;
@@ -587,6 +592,7 @@ class ShoppingCartController extends Controller
                 ],
                 'membership_discount_percentage' => $membershipDiscountPercentage,
                 'membership_discount_value' => $membershipDiscountValue,
+                'membership_shipping_discount_value' => $membershipShippingDiscountValue,
                 'total_discount' => $totalDiscount,
                 'final_total' => $finalTotal,
             ]

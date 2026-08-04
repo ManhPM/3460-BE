@@ -283,6 +283,7 @@ class ShoppingCartService implements ShoppingCartServiceInterface
         if (!$user || !$user->membership_id) {
             $this->data['order']['membership_discount_percentage'] = 0;
             $this->data['order']['membership_discount_value'] = 0;
+            $this->data['order']['membership_shipping_discount_value'] = 0;
             return;
         }
 
@@ -294,6 +295,7 @@ class ShoppingCartService implements ShoppingCartServiceInterface
         if (!$user->member) {
             $this->data['order']['membership_discount_percentage'] = 0;
             $this->data['order']['membership_discount_value'] = 0;
+            $this->data['order']['membership_shipping_discount_value'] = 0;
             return;
         }
 
@@ -305,6 +307,11 @@ class ShoppingCartService implements ShoppingCartServiceInterface
 
         $this->data['order']['membership_discount_percentage'] = $discountPercentage;
         $this->data['order']['membership_discount_value'] = $discountValue;
+
+        // Tính giảm phí vận chuyển từ hạng thành viên
+        $shippingDiscountAmount = $user->member->shipping_discount_amount ?? 0;
+        $shippingFee = $this->data['order']['shipping_fee'] ?? 0;
+        $this->data['order']['membership_shipping_discount_value'] = min($shippingDiscountAmount, $shippingFee);
     }
 
     private function checkFlashSaleAvailability($shoppingCart)
@@ -408,7 +415,7 @@ class ShoppingCartService implements ShoppingCartServiceInterface
                 if (($order->payment_method == PaymentMethod::Wallet) && $user) {
                     $order->refresh();
                     $payable = ($order->total + ($order->shipping_fee ?? 0))
-                        - (($order->discount_value ?? 0) + ($order->voucher_shipping_discount_value ?? 0) + ($order->voucher_product_discount_value ?? 0) + ($order->membership_discount_value ?? 0) + ($order->points_discount_value ?? 0));
+                        - (($order->discount_value ?? 0) + ($order->voucher_shipping_discount_value ?? 0) + ($order->voucher_product_discount_value ?? 0) + ($order->membership_discount_value ?? 0) + ($order->membership_shipping_discount_value ?? 0) + ($order->points_discount_value ?? 0));
                     if ($user->wallet_balance >= $payable) {
                         $this->userRepository->update($user->id, ['wallet_balance' => $user->wallet_balance - $payable]);
                         WalletTransaction::create([
@@ -573,6 +580,7 @@ class ShoppingCartService implements ShoppingCartServiceInterface
                         + ($order->voucher_shipping_discount_value ?? 0)
                         + ($order->voucher_product_discount_value ?? 0)
                         + ($order->membership_discount_value ?? 0)
+                        + ($order->membership_shipping_discount_value ?? 0)
                         + ($order->points_discount_value ?? 0));
 
                 if ($user->wallet_balance >= $payable) {

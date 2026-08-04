@@ -17,6 +17,7 @@ class MembershipLevelRequest extends BaseRequest
             'icon' => ['required'],
             'description' => ['nullable'],
             'discount_percentage' => ['nullable', 'numeric', 'between:0,100'],
+            'shipping_discount_amount' => ['nullable', 'numeric', 'min:0'],
         ];
     }
 
@@ -32,6 +33,7 @@ class MembershipLevelRequest extends BaseRequest
             'icon' => ['required'],
             'description' => ['nullable'],
             'discount_percentage' => ['nullable', 'numeric', 'between:0,100'],
+            'shipping_discount_amount' => ['nullable', 'numeric', 'min:0'],
         ];
     }
 

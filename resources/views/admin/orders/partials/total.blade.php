@@ -37,6 +37,10 @@
             <td colspan="4" class="text-end text-muted">{{ __('Giảm giá hạng thành viên') }}</td>
             <td class="text-end text-success">{{ format_price($membership_discount_value ?? 0) }}</td>
         </tr>
+        <tr>
+            <td colspan="4" class="text-end text-muted">{{ __('Giảm phí vận chuyển hạng thành viên') }}</td>
+            <td class="text-end text-success">{{ format_price($membership_shipping_discount_value ?? 0) }}</td>
+        </tr>
         <tr class="border-top">
             <td colspan="4" class="fw-bold text-uppercase text-end">{{ __('Tổng cộng') }}</td>
             <td class="text-end fw-bold">

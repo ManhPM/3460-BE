@@ -33,6 +33,7 @@ class OrderResource extends JsonResource
             'voucher_product_discount_value' => $this->voucher_product_discount_value ?? 0,
             'membership_discount_percentage' => $this->membership_discount_percentage ?? 0,
             'membership_discount_value' => $this->membership_discount_value ?? 0,
+            'membership_shipping_discount_value' => $this->membership_shipping_discount_value ?? 0,
             'note' => $this->note,
             'shipping_date' => $this->shipping_date,
             'cancel_reason' => $this->cancel_reason,

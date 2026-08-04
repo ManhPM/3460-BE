@@ -55,4 +55,9 @@ class Post extends Model
     {
         return $query->where('is_featured', true);
     }
+
+    public function getAvatarAttribute()
+    {
+        return $this->image;
+    }
 }

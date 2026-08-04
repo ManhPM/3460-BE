@@ -16,4 +16,9 @@ class SliderItem extends Model
     public function slider(){
         return $this->belongsTo(Slider::class, 'slider_id');
     }
+
+    public function getAvatarAttribute()
+    {
+        return $this->attributes['avatar'] ?? $this->attributes['image'] ?? null;
+    }
 }

@@ -57,6 +57,7 @@ class Order extends Model
         'member_ship_points_earned',
         'membership_discount_percentage',
         'membership_discount_value',
+        'membership_shipping_discount_value',
         'bank_id'
     ];
 

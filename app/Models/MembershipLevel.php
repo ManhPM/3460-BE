@@ -13,6 +13,7 @@ class MembershipLevel extends Model
         'name',
         'min_points',
         'discount_percentage',
+        'shipping_discount_amount',
         'color_1',
         'color_2',
         'color_3',
