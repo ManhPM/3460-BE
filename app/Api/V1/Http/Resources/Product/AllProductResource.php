@@ -30,15 +30,20 @@ class AllProductResource extends ResourceCollection
                 'variant_name' => $variantName,
             ];
             if ($product->is_flash_sale) {
-                $fsDetail = $product->is_flash_sale->details()
+                $fsDetails = $product->is_flash_sale->details()
                     ->where('product_id', $product->id)
-                    ->whereNull('product_variation_id')
-                    ->first();
-                $data['flashsale_sold']  = $fsDetail?->sold ?? 0;
-                $data['flashsale_qty']   = $fsDetail?->qty ?? 0;
-                $data['flashsale_price'] = $fsDetail?->flashsale_price ?? 0;
-                $data['is_flash_sale'] = true;
+                    ->get();
+                $data['flashsale_sold']  = (int) $fsDetails->sum('sold');
+                $data['flashsale_qty']   = (int) $fsDetails->sum('qty');
+                $data['flashsale_price'] = $fsDetails->isNotEmpty() ? (float) $fsDetails->min('flashsale_price') : 0;
+                $data['is_flash_sale']   = true;
+            } else {
+                $data['flashsale_sold']  = 0;
+                $data['flashsale_qty']   = 0;
+                $data['flashsale_price'] = 0;
+                $data['is_flash_sale']   = false;
             }
+
             if ($product->type == ProductType::Simple) {
                 $data['price'] = $product->price ?? 0;
                 $data['promotion_price'] = $product->promotion_price ?? 0;
@@ -57,14 +62,6 @@ class AllProductResource extends ResourceCollection
 
                 $data['price'] = !empty($prices) ? max($prices) : 0;
                 $data['promotion_price'] = !empty($promotion_prices) ? min($promotion_prices) : 0;
-
-                if ($product->is_flash_sale) {
-                    $fsDetails = $product->is_flash_sale->details()
-                        ->where('product_id', $product->id)
-                        ->whereNotNull('product_variation_id')
-                        ->get();
-                    $data['flashsale_price'] = $fsDetails->isNotEmpty() ? $fsDetails->min('flashsale_price') : 0;
-                }
             } else {
                 $data['price'] = 0;
                 $data['promotion_price'] = 0;

@@ -45,21 +45,19 @@ class ShowProductResource extends JsonResource
         if ($this->is_flash_sale) {
             $data['is_flash_sale'] = true;
             $data['end_time'] = Carbon::parse($this->is_flash_sale->end_time)->toISOString();
+
+            $fsDetails = $this->is_flash_sale->details()
+                ->where('product_id', $this->id)
+                ->get();
+
+            $data['flashsale_sold']  = (int) $fsDetails->sum('sold');
+            $data['flashsale_qty']   = (int) $fsDetails->sum('qty');
+            $data['flashsale_price'] = $fsDetails->isNotEmpty() ? (float) $fsDetails->min('flashsale_price') : 0;
         }
 
         if ($this->type == ProductType::Simple) {
             $data['price'] = $this->price ?? 0;
             $data['promotion_price'] = $this->promotion_price ?? 0;
-            if ($this->is_flash_sale) {
-                // Sản phẩm đơn: lấy detail có product_variation_id = null
-                $fsDetail = $this->is_flash_sale->details()
-                    ->where('product_id', $this->id)
-                    ->whereNull('product_variation_id')
-                    ->first();
-                $data['flashsale_sold']  = $fsDetail?->sold ?? 0;
-                $data['flashsale_qty']   = $fsDetail?->qty ?? 0;
-                $data['flashsale_price'] = $fsDetail?->flashsale_price ?? 0;
-            }
         } elseif ($this->productAttributes) {
             $data = $this->handlePriceVariation($data);
             $data['attributes'] = $this->productAttributes->map(function ($productAttribute) {

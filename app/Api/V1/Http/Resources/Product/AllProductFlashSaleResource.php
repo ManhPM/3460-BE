@@ -27,29 +27,19 @@ class AllProductFlashSaleResource extends ResourceCollection
                 'avg_rating' => round($product->avg_rating, 1),
                 'variant_name' => $variantName,
             ];
-            // Đọc từ flash_sale_details đã được attach (FlashSaleResourceNoPaginate)
-            // hoặc fallback query qua is_flash_sale nếu không có
-            $flashSaleDetails = $product->flash_sale_details ?? null;
+            $fsDetails = $product->flash_sale_details 
+                ?? ($product->is_flash_sale ? $product->is_flash_sale->details()->where('product_id', $product->id)->get() : collect());
 
-            if ($flashSaleDetails) {
-                // Lấy detail của sản phẩm chính (product_variation_id = null)
-                $mainDetail = $flashSaleDetails->firstWhere('product_variation_id', null);
-                $data['flashsale_sold'] = $mainDetail?->sold ?? 0;
-                $data['flashsale_qty']  = $mainDetail?->qty ?? 0;
-
-                // Nếu có biến thể → lấy giá min từ các variation detail
-                $variationDetails = $flashSaleDetails->whereNotNull('product_variation_id');
-                if ($variationDetails->isNotEmpty()) {
-                    $data['flashsale_price'] = $variationDetails->min('flashsale_price') ?? 0;
-                } else {
-                    $data['flashsale_price'] = $mainDetail?->flashsale_price ?? 0;
-                }
+            if ($fsDetails && $fsDetails->isNotEmpty()) {
+                $data['flashsale_sold']  = (int) $fsDetails->sum('sold');
+                $data['flashsale_qty']   = (int) $fsDetails->sum('qty');
+                $data['flashsale_price'] = (float) $fsDetails->min('flashsale_price');
+                $data['is_flash_sale']   = true;
             } else {
-                // Fallback: query trực tiếp (dùng cho FlashSaleResource)
-                $detail = $product->is_flash_sale?->details()->where('product_id', $product->id)->first();
-                $data['flashsale_sold']  = $detail?->sold ?? 0;
-                $data['flashsale_qty']   = $detail?->qty ?? 0;
-                $data['flashsale_price'] = $detail?->flashsale_price ?? 0;
+                $data['flashsale_sold']  = 0;
+                $data['flashsale_qty']   = 0;
+                $data['flashsale_price'] = 0;
+                $data['is_flash_sale']   = false;
             }
             return $data;
         });
