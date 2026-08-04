@@ -285,7 +285,7 @@ class OrderController extends Controller
             }
         }
 
-        $final_total = $total + $shipping_fee - $discountValue - $voucher_shipping_discount_value - $voucher_product_discount_value - $points_discount_value;
+        $final_total = max(0, $total + $shipping_fee - $discountValue - $voucher_shipping_discount_value - $voucher_product_discount_value - $points_discount_value);
 
         return response()->json([
             'status' => 200,

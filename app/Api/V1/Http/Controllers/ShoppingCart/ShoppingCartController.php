@@ -564,7 +564,7 @@ class ShoppingCartController extends Controller
         $totalDiscount = $discountValue + $voucherProductValue + $voucherShippingValue + $membershipDiscountValue + $membershipShippingDiscountValue;
 
         // Tổng tiền cuối cùng (sau khi trừ tất cả discount và points, cộng shipping)
-        $finalTotal = $subtotal - $totalDiscount - $pointsDiscount['value'] + $shippingFee;
+        $finalTotal = max(0, $subtotal - $totalDiscount - $pointsDiscount['value'] + $shippingFee);
 
         return response()->json([
             'status' => 200,
