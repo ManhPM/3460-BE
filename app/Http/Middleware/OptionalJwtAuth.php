@@ -16,8 +16,10 @@ class OptionalJwtAuth
         if ($token) {
             try {
                 $user = JWTAuth::setToken($token)->authenticate();
-                Auth::login($user);
-                $request->setUserResolver(fn() => $user);
+                if ($user && $user instanceof \Illuminate\Contracts\Auth\Authenticatable) {
+                    Auth::setUser($user);
+                    $request->setUserResolver(fn() => $user);
+                }
             } catch (TokenBlacklistedException $e) {
                 // Token is blacklisted, continue without authentication
             } catch (\Exception $e) {

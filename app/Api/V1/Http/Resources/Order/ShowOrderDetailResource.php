@@ -27,9 +27,9 @@ class ShowOrderDetailResource extends JsonResource
             'avatar' => asset($this->product_avatar),
             'is_reviewed' => $this->is_reviewed
         ];
-        if ($this->product->type == ProductType::Variable) {
+        if ($this->product && $this->product->type == ProductType::Variable) {
             $data['variation_id'] = $this->product_variation_id;
-            $data['attribute_variations']  = collect($this->productVariation->attribute_variations)->map(function ($item) {
+            $data['attribute_variations'] = collect($this->productVariation?->attribute_variations ?? [])->map(function ($item) {
                 return [
                     'id' => $item->id,
                     'name' => $item->name

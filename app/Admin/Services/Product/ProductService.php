@@ -165,6 +165,9 @@ class ProductService implements ProductServiceInterface
                 'identity' => $this->uniqidReal(5)
             ]);
         } elseif ($data['variation_action'] == ProductVariationAction::AddFromAllVariations) {
+            if ($attribute_variations->isEmpty() || !isset($attribute_variations[0])) {
+                return view($view['no_variation']);
+            }
             $collect = collect($attribute_variations[0]->keys()->all());
             $arr = [];
 
