@@ -3,27 +3,37 @@
         <li class="nav-item" role="presentation">
             <button class="nav-link text-black active" id="tab-login" data-bs-toggle="tab" data-bs-target="#pane-login"
                 type="button" role="tab" aria-controls="pane-login"
-                aria-selected="false">{{ __('Thông tin đăng nhập') }}</button>
+                aria-selected="true">
+                <i class="ti ti-lock me-1"></i>{{ __('Thông tin đăng nhập') }}
+            </button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link text-black" id="tab-basic" data-bs-toggle="tab" data-bs-target="#pane-basic"
                 type="button" role="tab" aria-controls="pane-basic"
-                aria-selected="false">{{ __('Thông tin cơ bản') }}</button>
+                aria-selected="false">
+                <i class="ti ti-user me-1"></i>{{ __('Thông tin cơ bản') }}
+            </button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link text-black" id="tab-membership" data-bs-toggle="tab"
                 data-bs-target="#pane-membership" type="button" role="tab" aria-controls="pane-membership"
-                aria-selected="false">{{ __('Hạng thành viên') }}</button>
+                aria-selected="false">
+                <i class="ti ti-crown me-1"></i>{{ __('Hạng thành viên') }}
+            </button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link text-black" id="tab-affiliate" data-bs-toggle="tab" data-bs-target="#pane-affiliate"
                 type="button" role="tab" aria-controls="pane-affiliate"
-                aria-selected="false">{{ __('Thông tin Affiliate') }}</button>
+                aria-selected="false">
+                <i class="ti ti-share me-1"></i>{{ __('Thông tin Affiliate') }}
+            </button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link text-black" id="tab-point-history" data-bs-toggle="tab"
                 data-bs-target="#pane-point-history" type="button" role="tab" aria-controls="pane-point-history"
-                aria-selected="false">{{ __('Lịch sử điểm') }}</button>
+                aria-selected="false">
+                <i class="ti ti-star me-1"></i>{{ __('Lịch sử điểm') }}
+            </button>
         </li>
     </ul>
 
@@ -380,12 +390,16 @@
                 <li class="nav-item" role="presentation">
                     <button class="nav-link active text-dark" id="tab-point-earned" data-bs-toggle="pill"
                         data-bs-target="#pane-point-earned" type="button" role="tab"
-                        aria-controls="pane-point-earned" aria-selected="true">{{ __('Lịch sử tích điểm') }}</button>
+                        aria-controls="pane-point-earned" aria-selected="true">
+                        <i class="ti ti-sparkles me-1"></i>{{ __('Lịch sử tích điểm') }}
+                    </button>
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link text-dark" id="tab-point-used" data-bs-toggle="pill"
                         data-bs-target="#pane-point-used" type="button" role="tab"
-                        aria-controls="pane-point-used" aria-selected="false">{{ __('Lịch sử dùng điểm') }}</button>
+                        aria-controls="pane-point-used" aria-selected="false">
+                        <i class="ti ti-history me-1"></i>{{ __('Lịch sử dùng điểm') }}
+                    </button>
                 </li>
             </ul>
 

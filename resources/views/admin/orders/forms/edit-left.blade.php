@@ -97,6 +97,41 @@
                                     </div>
                                 </div>
                             </div>
+                            @php
+                                $orderUser = $order->user;
+                                $referrer = null;
+                                if ($orderUser && !empty($orderUser->referrer_code)) {
+                                    $referrer = \App\Models\User::where('affiliate_code', $orderUser->referrer_code)
+                                        ->orWhere('code', $orderUser->referrer_code)
+                                        ->first();
+                                }
+                            @endphp
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-start">
+                                    <div class="flex-shrink-0">
+                                        <div class="avatar avatar-sm text-white rounded" style="background-color: #6f42c1 !important;">
+                                            <i class="ti ti-share"></i>
+                                        </div>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <label class="form-label text-muted small mb-1">{{ __('Người giới thiệu (Affiliate)') }}</label>
+                                        @if($referrer)
+                                            <p class="mb-0">
+                                                <a href="{{ route('admin.user.edit', $referrer->id) }}" class="fw-semibold text-primary text-decoration-none" title="{{ __('Xem chi tiết người giới thiệu') }}">
+                                                    {{ $referrer->fullname }}
+                                                </a>
+                                                <span class="badge bg-label-success ms-1">{{ $referrer->affiliate_code ?? $referrer->code }}</span>
+                                            </p>
+                                        @elseif(!empty($orderUser->referrer_code))
+                                            <p class="mb-0 fw-semibold text-dark">
+                                                <span class="badge bg-label-warning">{{ $orderUser->referrer_code }}</span>
+                                            </p>
+                                        @else
+                                            <p class="mb-0 text-muted fst-italic">{{ __('Không có (Trực tiếp)') }}</p>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
