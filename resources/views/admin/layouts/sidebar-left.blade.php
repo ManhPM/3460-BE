@@ -452,7 +452,7 @@
 <div class="sidebar" id="sidebar">
 
     <div style="display: flex; justify-content: center; align-items: center; padding: 1rem;">
-        <img src="{{ asset($settings->firstWhere('setting_key', 'site_logo')->plain_value) }}" alt="logo"
+        <img src="{{ asset('/public/assets/images/logo-ngang.png') }}" alt="logo"
             class="logo" style="max-height: 150px; width: auto; object-fit: contain;">
     </div>
     <!-- Search box for modules -->

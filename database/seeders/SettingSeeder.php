@@ -150,7 +150,7 @@ class SettingSeeder extends Seeder
             [
                 'setting_key' => 'site_logo',
                 'setting_name' => 'Logo trang web',
-                'plain_value' => '/public/assets/images/light-hori-logo.png',
+                'plain_value' => '/public/assets/images/logo.png',
                 'type_input' => SettingTypeInput::Image,
                 'group' => SettingGroup::General,
                 'icon' => 'ti ti-photo',
