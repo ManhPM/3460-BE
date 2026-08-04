@@ -57,10 +57,13 @@ class ProductService implements ProductServiceInterface
         $this->data['product']['gallery'] = $this->data['product']['gallery'] ? explode(",", $this->data['product']['gallery']) : null;
         $instance = $this->repository->create($this->data['product']);
         $this->repository->attachCategories($instance, $this->data['categories_id'] ?? []);
-        if ($instance->type == ProductType::Variable && isset($this->data['product_attribute'])) {
-            $this->repositoryProductAttribute->createOrUpdateWithVariation($instance->id, $this->data['product_attribute']);
-
-            $this->storeOrUpdateProductVariations($instance->id);
+        if ($instance->type == ProductType::Variable) {
+            if (isset($this->data['product_attribute'])) {
+                $this->repositoryProductAttribute->createOrUpdateWithVariation($instance->id, $this->data['product_attribute']);
+            }
+            if (isset($this->data['products_variations'])) {
+                $this->storeOrUpdateProductVariations($instance->id);
+            }
         }
         return $instance;
     }
@@ -77,9 +80,13 @@ class ProductService implements ProductServiceInterface
             $instance = $this->repository->update($this->data['product']['id'], $this->data['product']);
             $this->repository->syncCategories($instance, $this->data['categories_id'] ?? []);
 
-            if ($instance->type == ProductType::Variable && isset($this->data['product_attribute'])) {
-                $this->repositoryProductAttribute->createOrUpdateWithVariation($instance->id, $this->data['product_attribute']);
-                $this->storeOrUpdateProductVariations($instance->id);
+            if ($instance->type == ProductType::Variable) {
+                if (isset($this->data['product_attribute'])) {
+                    $this->repositoryProductAttribute->createOrUpdateWithVariation($instance->id, $this->data['product_attribute']);
+                }
+                if (isset($this->data['products_variations'])) {
+                    $this->storeOrUpdateProductVariations($instance->id);
+                }
             } else {
                 $this->repository->deleteProductAttributes($instance);
                 $this->repository->deleteProductVariations($instance);
@@ -106,9 +113,13 @@ class ProductService implements ProductServiceInterface
             $this->repository->syncDiscounts($instance, $this->data['discount_ids'] ?? []);
 
 
-            if ($instance->type == ProductType::Variable && isset($this->data['product_attribute'])) {
-                $this->repositoryProductAttribute->createOrUpdateWithVariationApi($instance->id, $this->data['product_attribute']);
-                $this->storeOrUpdateProductVariations($instance->id);
+            if ($instance->type == ProductType::Variable) {
+                if (isset($this->data['product_attribute'])) {
+                    $this->repositoryProductAttribute->createOrUpdateWithVariationApi($instance->id, $this->data['product_attribute']);
+                }
+                if (isset($this->data['products_variations'])) {
+                    $this->storeOrUpdateProductVariations($instance->id);
+                }
             } else {
                 $this->repository->deleteProductAttributes($instance);
                 $this->repository->deleteProductVariations($instance);
@@ -130,7 +141,8 @@ class ProductService implements ProductServiceInterface
     protected function storeOrUpdateProductVariations($product_id): void
     {
         if (isset($this->data['products_variations']['attribute_variation_id']) && $this->data['products_variations']['attribute_variation_id']) {
-            $attribute_variation_id = collect($this->data['product_attribute']['attribute_variation_id'])->collapse()->flip();
+            $rawAttrVars = $this->data['product_attribute']['attribute_variation_id'] ?? [];
+            $attribute_variation_id = collect($rawAttrVars)->collapse()->flip();
 
             foreach ($this->data['products_variations']['attribute_variation_id'] as $key => $item) {
                 if (!$attribute_variation_id->has($item)) {
@@ -146,7 +158,7 @@ class ProductService implements ProductServiceInterface
 
         $data = $request->validated();
 
-        $attribute_variations = $this->repositoryAttributeVariation->getOrderByFollow($data['product_attribute']['attribute_variation_id']);
+        $attribute_variations = $this->repositoryAttributeVariation->getOrderByFollow($data['product_attribute']['attribute_variation_id'] ?? []);
         if ($data['variation_action'] == ProductVariationAction::AddSimple) {
             $response = view($view['product_variation'], [
                 'attribute_variations' => $attribute_variations,
