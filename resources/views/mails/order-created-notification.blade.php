@@ -802,7 +802,7 @@
         <!-- Footer -->
         <div class="footer">
             <p>Email này được gửi tự động từ hệ thống, vui lòng không trả lời.</p>
-            <p class="brand">© 2025 Mevivu - Tất cả quyền được bảo lưu</p>
+            <p class="brand">© 2025 LINHKA - Tất cả quyền được bảo lưu</p>
         </div>
     </div>
 </body>

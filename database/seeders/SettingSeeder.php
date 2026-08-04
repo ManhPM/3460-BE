@@ -168,7 +168,7 @@ class SettingSeeder extends Seeder
             [
                 'setting_key' => 'email_notification',
                 'setting_name' => 'Email nhận thông báo đơn hàng mới: (Nhập theo dạng: email1, email2, email3, ...)',
-                'plain_value' => 'info@mevivu.com, marispham1509@gmail.com, nhan772000@gmail.com',
+                'plain_value' => 'info@linhka.com, marispham1509@gmail.com, nhan772000@gmail.com',
                 'type_input' => SettingTypeInput::Text,
                 'group' => SettingGroup::General,
                 'icon' => 'ti ti-mail',
@@ -177,7 +177,7 @@ class SettingSeeder extends Seeder
             [
                 'setting_key' => 'facebook_url',
                 'setting_name' => 'Facebook URL',
-                'plain_value' => 'https://www.facebook.com/mevivu',
+                'plain_value' => 'https://www.facebook.com/linhka',
                 'type_input' => SettingTypeInput::Text,
                 'group' => SettingGroup::General,
                 'icon' => 'ti ti-brand-facebook',
@@ -222,7 +222,7 @@ class SettingSeeder extends Seeder
             [
                 'setting_key' => 'email',
                 'setting_name' => 'Email',
-                'plain_value' => 'info@mevivu.com',
+                'plain_value' => 'info@linhka.com',
                 'type_input' => SettingTypeInput::Email,
                 'group' => SettingGroup::General,
                 'icon' => 'ti ti-mail',
@@ -231,7 +231,7 @@ class SettingSeeder extends Seeder
             [
                 'setting_key' => 'about_us',
                 'setting_name' => 'Về chúng tôi',
-                'plain_value' => 'info@mevivu.com',
+                'plain_value' => 'info@linhka.com',
                 'type_input' => SettingTypeInput::Ckeditor,
                 'group' => SettingGroup::General,
                 'icon' => 'ti ti-file-text',
@@ -240,7 +240,7 @@ class SettingSeeder extends Seeder
             [
                 'setting_key' => 'policy',
                 'setting_name' => 'Chính sách',
-                'plain_value' => 'info@mevivu.com',
+                'plain_value' => 'info@linhka.com',
                 'type_input' => SettingTypeInput::Ckeditor,
                 'group' => SettingGroup::General,
                 'icon' => 'ti ti-file-text',
@@ -249,7 +249,7 @@ class SettingSeeder extends Seeder
             [
                 'setting_key' => 'term',
                 'setting_name' => 'Điều khoản',
-                'plain_value' => 'info@mevivu.com',
+                'plain_value' => 'info@linhka.com',
                 'type_input' => SettingTypeInput::Ckeditor,
                 'group' => SettingGroup::General,
                 'icon' => 'ti ti-file-text',
@@ -324,7 +324,7 @@ class SettingSeeder extends Seeder
             [
                 'setting_key' => 'footer_email',
                 'setting_name' => 'Hợp tác khiếu nại',
-                'plain_value' => 'contact@mevivu.com',
+                'plain_value' => 'contact@linhka.com',
                 'type_input' => SettingTypeInput::Text,
                 'group' => SettingGroup::Footer,
                 'icon' => 'ti ti-mail',
@@ -541,7 +541,7 @@ class SettingSeeder extends Seeder
             [
                 'setting_key' => 'footer_facebook',
                 'setting_name' => 'Facebook',
-                'plain_value' => 'https://www.facebook.com/mevivu',
+                'plain_value' => 'https://www.facebook.com/linhka',
                 'type_input' => SettingTypeInput::Text,
                 'group' => SettingGroup::Footer,
                 'icon' => 'ti ti-brand-facebook',
@@ -550,7 +550,7 @@ class SettingSeeder extends Seeder
             [
                 'setting_key' => 'footer_linkedin',
                 'setting_name' => 'Linkedin',
-                'plain_value' => 'https://www.facebook.com/mevivu',
+                'plain_value' => 'https://www.facebook.com/linhka',
                 'type_input' => SettingTypeInput::Text,
                 'group' => SettingGroup::Footer,
                 'icon' => 'ti ti-brand-linkedin',
@@ -559,7 +559,7 @@ class SettingSeeder extends Seeder
             [
                 'setting_key' => 'footer_tiktok',
                 'setting_name' => 'Tiktok',
-                'plain_value' => 'https://www.facebook.com/mevivu',
+                'plain_value' => 'https://www.facebook.com/linhka',
                 'type_input' => SettingTypeInput::Text,
                 'group' => SettingGroup::Footer,
                 'icon' => 'ti ti-brand-tiktok',
@@ -568,7 +568,7 @@ class SettingSeeder extends Seeder
             [
                 'setting_key' => 'footer_youtube',
                 'setting_name' => 'Youtube',
-                'plain_value' => 'https://www.facebook.com/mevivu',
+                'plain_value' => 'https://www.facebook.com/linhka',
                 'type_input' => SettingTypeInput::Text,
                 'group' => SettingGroup::Footer,
                 'icon' => 'ti ti-brand-youtube',
@@ -577,7 +577,7 @@ class SettingSeeder extends Seeder
             [
                 'setting_key' => 'footer_instagram',
                 'setting_name' => 'Instagram',
-                'plain_value' => 'https://www.facebook.com/mevivu',
+                'plain_value' => 'https://www.facebook.com/linhka',
                 'type_input' => SettingTypeInput::Text,
                 'group' => SettingGroup::Footer,
                 'icon' => 'ti ti-brand-instagram',
@@ -587,7 +587,7 @@ class SettingSeeder extends Seeder
             [
                 'setting_key' => 'contact_messenger',
                 'setting_name' => 'Messenger',
-                'plain_value' => 'https://www.facebook.com/mevivu',
+                'plain_value' => 'https://www.facebook.com/linhka',
                 'type_input' => SettingTypeInput::Text,
                 'group' => SettingGroup::Contact,
                 'icon' => 'ti ti-brand-messenger',
@@ -596,7 +596,7 @@ class SettingSeeder extends Seeder
             [
                 'setting_key' => 'contact_facebook',
                 'setting_name' => 'Facebook',
-                'plain_value' => 'https://www.facebook.com/mevivu',
+                'plain_value' => 'https://www.facebook.com/linhka',
                 'type_input' => SettingTypeInput::Text,
                 'group' => SettingGroup::Contact,
                 'icon' => 'ti ti-brand-facebook',
@@ -725,7 +725,7 @@ class SettingSeeder extends Seeder
             [
                 'setting_key' => 'infor_vision_content',
                 'setting_name' => 'Nội dung tầm nhìn',
-                'plain_value' => 'Bằng khát vọng tiên phong cùng chiến lược đầu tư - phát triển bền vững, Mevivu đặt mục tiêu trở thành Tập đoàn truyền thông thương mại - marketing hàng đầu tại Việt Nam và vươn tầm khu vực Đông Nam Á. Trở thành đối tác tin cậy, chiến lược, mang đến cho khách hàng trải nghiệm tối ưu và mức độ hài lòng cao nhất.',
+                'plain_value' => 'Bằng khát vọng tiên phong cùng chiến lược đầu tư - phát triển bền vững, LINHKA đặt mục tiêu trở thành Tập đoàn truyền thông thương mại - marketing hàng đầu tại Việt Nam và vươn tầm khu vực Đông Nam Á. Trở thành đối tác tin cậy, chiến lược, mang đến cho khách hàng trải nghiệm tối ưu và mức độ hài lòng cao nhất.',
                 'type_input' => SettingTypeInput::Text,
                 'group' => SettingGroup::Information,
                 'icon' => 'ti ti-file-description',
@@ -834,7 +834,7 @@ class SettingSeeder extends Seeder
             [
                 'setting_key' => 'infor_mission_text_1',
                 'setting_name' => 'Nội dung sứ mệnh 1',
-                'plain_value' => 'Mevivu đề cao tinh thần cầu tiến, mỗi thành viên trong tập thể cam kết cải tiến 1% mỗi ngày. Chúng tôi không ngừng nâng cao chất lượng dịch vụ, hoàn thiện từng khâu nhỏ để mang đến trải nghiệm hoàn hảo cho khách hàng.',
+                'plain_value' => 'LINHKA đề cao tinh thần cầu tiến, mỗi thành viên trong tập thể cam kết cải tiến 1% mỗi ngày. Chúng tôi không ngừng nâng cao chất lượng dịch vụ, hoàn thiện từng khâu nhỏ để mang đến trải nghiệm hoàn hảo cho khách hàng.',
                 'type_input' => SettingTypeInput::Text,
                 'group' => SettingGroup::Information,
                 'icon' => 'ti ti-file-description',
@@ -852,7 +852,7 @@ class SettingSeeder extends Seeder
             [
                 'setting_key' => 'infor_mission_text_2',
                 'setting_name' => 'Nội dung sứ mệnh 2',
-                'plain_value' => 'Mevivu hướng đến xây dựng một môi trường làm việc văn minh, đề cao giá trị đạo đức và văn hóa doanh nghiệp. Mỗi hành trình mua sắm tại Mevivu đều mang đến cho khách hàng trải nghiệm TỐT, sự hài lòng và ấn tượng sâu sắc.',
+                'plain_value' => 'LINHKA hướng đến xây dựng một môi trường làm việc văn minh, đề cao giá trị đạo đức và văn hóa doanh nghiệp. Mỗi hành trình mua sắm tại LINHKA đều mang đến cho khách hàng trải nghiệm TỐT, sự hài lòng và ấn tượng sâu sắc.',
                 'type_input' => SettingTypeInput::Text,
                 'group' => SettingGroup::Information,
                 'icon' => 'ti ti-file-description',
@@ -880,7 +880,7 @@ class SettingSeeder extends Seeder
             [
                 'setting_key' => 'infor_value_content',
                 'setting_name' => 'Nội dung giá trị cốt lõi',
-                'plain_value' => 'Mevivu Group xác định Tâm - Trí - Nhân - Tín - Tiến - Chất là kim chỉ nam cho mọi hoạt động, là nền tảng đạo đức và trí tuệ vững chắc cho sự phát triển bền vững.',
+                'plain_value' => 'LINHKA Group xác định Tâm - Trí - Nhân - Tín - Tiến - Chất là kim chỉ nam cho mọi hoạt động, là nền tảng đạo đức và trí tuệ vững chắc cho sự phát triển bền vững.',
                 'type_input' => SettingTypeInput::Text,
                 'group' => SettingGroup::Information,
                 'icon' => 'ti ti-file-description',
@@ -889,7 +889,7 @@ class SettingSeeder extends Seeder
             [
                 'setting_key' => 'infor_value_sub_content',
                 'setting_name' => 'Nội dung phụ giá trị cốt lõi',
-                'plain_value' => 'Giá trị cốt lõi của Mevivu Group',
+                'plain_value' => 'Giá trị cốt lõi của LINHKA Group',
                 'type_input' => SettingTypeInput::Text,
                 'group' => SettingGroup::Information,
                 'icon' => 'ti ti-file-description',

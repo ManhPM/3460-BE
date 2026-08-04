@@ -138,7 +138,7 @@
 
         <div class="footer">
             <p>Email này được gửi tự động, vui lòng không trả lời.</p>
-            <p>© 2025 Mevivu. Tất cả các quyền được bảo lưu.</p>
+            <p>© 2025 LINHKA. Tất cả các quyền được bảo lưu.</p>
         </div>
     </div>
 </body>

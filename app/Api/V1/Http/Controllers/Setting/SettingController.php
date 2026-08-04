@@ -19,29 +19,6 @@ class SettingController extends Controller
         $this->repository = $repository;
     }
 
-    /**
-     * Thông tin cài đặt
-     *
-     * Lấy tất cả thông tin cài đặt chung (Facebook, Zalo, Số điện thoại, Email, Về chúng tôi, Chính sách, Điều khoản).
-     *
-     * @headersParam X-TOKEN-ACCESS string
-     * token để lấy dữ liệu. Example: ijCCtggxLEkG3Yg8hNKZJvMM4EA1Rw4VjVvyIOb7
-     *
-     * @response 200 {
-     *      "status": 200,
-     *      "message": "Thực hiện thành công.",
-     *      "data": {
-     *          "facebook_url": "https://www.facebook.com/mevivu",
-     *          "zalo_url": "https://zalo.me/0909090909",
-     *          "phone_number_1": "0909090909",
-     *          "phone_number_2": "0909090909",
-     *          "email": "info@mevivu.com",
-     *          "about_us": "Nội dung về chúng tôi",
-     *          "policy": "Nội dung chính sách",
-     *          "term": "Nội dung điều khoản"
-     *      }
-     * }
-     */
     public function index(): JsonResponse
     {
         // Lấy các settings từ group General

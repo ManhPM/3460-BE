@@ -122,7 +122,7 @@
                                 </p>
                                 <p style="color: #334155; font-size: 16px; font-weight: 600; margin: 16px 0 0 0;">
                                     Trân trọng,<br>
-                                    <span style="color: #6366f1;">Mevivu Team</span>
+                                    <span style="color: #6366f1;">LINHKA Team</span>
                                 </p>
                             </div>
                         </td>

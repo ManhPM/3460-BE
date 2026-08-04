@@ -110,7 +110,7 @@
 
         <div class="content">
             <div class="welcome-message">
-                <p>Chào mừng <strong>{{ $user->fullname }}</strong> đến với Mevivu!</p>
+                <p>Chào mừng <strong>{{ $user->fullname }}</strong> đến với LINHKA!</p>
                 <p>Cảm ơn bạn đã đăng ký tài khoản. Chúng tôi rất vui mừng được chào đón bạn!</p>
             </div>
 
@@ -134,7 +134,7 @@
 
         <div class="footer">
             <p>Email này được gửi tự động, vui lòng không trả lời.</p>
-            <p>© 2024 Mevivu. Tất cả các quyền được bảo lưu.</p>
+            <p>© 2024 LINHKA. Tất cả các quyền được bảo lưu.</p>
         </div>
     </div>
 </body>

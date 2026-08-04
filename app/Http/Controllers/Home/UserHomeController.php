@@ -134,7 +134,7 @@ class UserHomeController extends Controller
     {
         $settings = $this->settingRepository->getAll();
         $title = 'Tra cứu đơn hàng';
-        $meta_desc = 'Trang tra cứu đơn hàng Mevivu dùng để tra cứu thông tin các đơn hàng dựa vào mã hóa đơn.';
+        $meta_desc = 'Trang tra cứu đơn hàng LINHKA dùng để tra cứu thông tin các đơn hàng dựa vào mã hóa đơn.';
         $instance = $this->orderRepository->getBy(['code' => $request->input('code', 0), 'phone' => $request->input('phone')])->first();
         if ($instance) {
             return view($this->view['order-result'], compact('settings', 'meta_desc', 'title', 'instance'));
@@ -146,7 +146,7 @@ class UserHomeController extends Controller
     {
         $settings = $this->settingRepository->getAll();
         $title = 'Tra cứu đơn hàng';
-        $meta_desc = 'Trang tra cứu đơn hàng Mevivu dùng để tra cứu thông tin các đơn hàng dựa vào mã hóa đơn.';
+        $meta_desc = 'Trang tra cứu đơn hàng LINHKA dùng để tra cứu thông tin các đơn hàng dựa vào mã hóa đơn.';
         $paymentImage = $request->file('payment_image');
         $code = $request->input('code');
         if (isset($paymentImage)) {

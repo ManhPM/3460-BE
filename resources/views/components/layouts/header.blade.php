@@ -18,7 +18,7 @@
                 <x-link :href="route('user.index')">
                     <img style="max-height: 80px" class="img-fluid"
                         src="{{ asset($settings->where('setting_key', 'site_logo')->first()->plain_value) }}"
-                        alt="Mevivu">
+                        alt="LINHKA">
                 </x-link>
             </div>
             <!-- Search Bar -->
@@ -275,7 +275,7 @@
                     <x-link :href="route('user.index')">
                         <img style="max-height: 40px"
                             src="{{ asset($settings->where('setting_key', 'site_logo')->first()->plain_value) }}"
-                            alt="Mevivu" class="img-fluid">
+                            alt="LINHKA" class="img-fluid">
                     </x-link>
                 </div>
                 <div class="col-3 d-flex justify-content-center align-items-center cart ps-1">

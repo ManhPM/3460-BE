@@ -31,7 +31,7 @@ $config['authentication'] = function () {
 /*============================ License Key ============================================*/
 // http://docs.cksource.com/ckfinder3-php/configuration.html#configuration_options_licenseKey
 
-$config['licenseName'] = '3283.mevivu.net';
+$config['licenseName'] = '3460.mevivu.net';
 $config['licenseKey']  = 'BL8LNQEWXUY25Y4Q5HV4XDBGA5KEV';
 
 /*============================ CKFinder Internal Directory ============================*/
