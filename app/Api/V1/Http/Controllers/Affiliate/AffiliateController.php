@@ -68,6 +68,11 @@ class AffiliateController extends Controller
     {
         $user = $this->getCurrentUser();
 
+        if (empty($user->affiliate_code)) {
+            $user->affiliate_code = $this->createAffiliateCode();
+            $user->save();
+        }
+
         // Lấy thống kê theo tháng (tháng 1-12 năm nay)
         $currentYear = Carbon::now()->year;
         $monthlyStats = [];

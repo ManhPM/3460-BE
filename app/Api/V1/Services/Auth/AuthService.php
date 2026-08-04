@@ -53,6 +53,12 @@ class AuthService implements AuthServiceInterface
             $data['verify_code'] = random_int(1000, 9999);
             $data['verify_code_expiration'] = Carbon::now()->addMinutes(30);
             $data['membership_id'] = 1;
+            if (empty($data['code'])) {
+                $data['code'] = $this->createCodeUser();
+            }
+            if (empty($data['affiliate_code'])) {
+                $data['affiliate_code'] = $this->createAffiliateCode();
+            }
             if (env('IS_VERIFY_EMAIL')) {
                 $data['is_email_verified'] = 0;
             } else {
