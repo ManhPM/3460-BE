@@ -2,6 +2,7 @@
 
 namespace App\Api\V1\Http\Resources\Product;
 
+use App\Enums\Product\ProductType;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use App\Api\V1\Support\AuthSupport;
 
