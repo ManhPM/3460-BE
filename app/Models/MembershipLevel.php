@@ -21,6 +21,12 @@ class MembershipLevel extends Model
         'description'
     ];
 
+    protected $casts = [
+        'min_points' => 'integer',
+        'discount_percentage' => 'integer',
+        'shipping_discount_amount' => 'integer',
+    ];
+
     public function users()
     {
         return $this->hasMany(User::class, 'membership_id', 'id');

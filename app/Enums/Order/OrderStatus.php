@@ -43,8 +43,8 @@ enum OrderStatus: string
     public function getAllowedTransitions(): array
     {
         return match ($this) {
-            self::Pending => [self::Confirmed, self::Cancelled],
-            self::Confirmed => [self::Delivering, self::Cancelled],
+            self::Pending => [self::Confirmed, self::Delivering, self::Completed, self::Cancelled],
+            self::Confirmed => [self::Delivering, self::Completed, self::Cancelled],
             self::Delivering => [self::Completed, self::Cancelled],
             self::Completed => [], // Đơn hàng hoàn thành không thể chuyển sang trạng thái khác
             self::Cancelled => [], // Đơn hàng đã hủy không thể chuyển sang trạng thái khác

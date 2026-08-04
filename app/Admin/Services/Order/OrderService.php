@@ -271,7 +271,7 @@ class OrderService implements OrderServiceInterface
             $settings = $this->settingRepository->getAll();
 
             if ($oldOrder->status != $order->status) {
-                if ($oldOrder->status == OrderStatus::Pending && $order->status == OrderStatus::Confirmed) {
+                if ($oldOrder->status == OrderStatus::Pending && in_array($order->status, [OrderStatus::Confirmed, OrderStatus::Delivering, OrderStatus::Completed])) {
                     $confirmResult = $this->confirm($order->id);
                     if ($confirmResult !== true) {
                         $errorMessage = is_string($confirmResult)
@@ -279,32 +279,33 @@ class OrderService implements OrderServiceInterface
                             : ($confirmResult === 1 ? "Giá sản phẩm đã thay đổi." : "Xác nhận đơn hàng thất bại.");
                         throw new Exception($errorMessage);
                     }
-                } else {
-                    if ($order->status == OrderStatus::Cancelled) {
-                        $this->restorePoints($order);
-                        // Refund to wallet if the order was paid by wallet
-                        if (($order->payment_method == \App\Enums\Payment\PaymentMethod::Wallet) && $order->user) {
-                            $order->refresh();
-                            $refundable = ($order->total + ($order->shipping_fee ?? 0))
-                                - (($order->discount_value ?? 0) + ($order->voucher_shipping_discount_value ?? 0) + ($order->voucher_product_discount_value ?? 0) + ($order->membership_discount_value ?? 0) + ($order->membership_shipping_discount_value ?? 0));
-                            $user = $order->user;
-                            // Sử dụng increment để tránh race condition
-                            $user->increment('wallet_balance', $refundable);
-                            \App\Models\WalletTransaction::create([
-                                'user_id' => $user->id,
-                                'amount' => $refundable,
-                                'type' => 'refund',
-                                'status' => 'approved',
-                                'order_id' => $order->id,
-                                'note' => 'Hoàn tiền vào ví do huỷ đơn',
-                            ]);
-                        }
+                }
+
+                if ($order->status == OrderStatus::Cancelled) {
+                    $this->restorePoints($order);
+                    // Refund to wallet if the order was paid by wallet
+                    if (($order->payment_method == \App\Enums\Payment\PaymentMethod::Wallet) && $order->user) {
+                        $order->refresh();
+                        $refundable = ($order->total + ($order->shipping_fee ?? 0))
+                            - (($order->discount_value ?? 0) + ($order->voucher_shipping_discount_value ?? 0) + ($order->voucher_product_discount_value ?? 0) + ($order->membership_discount_value ?? 0) + ($order->membership_shipping_discount_value ?? 0));
+                        $user = $order->user;
+                        // Sử dụng increment để tránh race condition
+                        $user->increment('wallet_balance', $refundable);
+                        \App\Models\WalletTransaction::create([
+                            'user_id' => $user->id,
+                            'amount' => $refundable,
+                            'type' => 'refund',
+                            'status' => 'approved',
+                            'order_id' => $order->id,
+                            'note' => 'Hoàn tiền vào ví do huỷ đơn',
+                        ]);
                     }
-                    $this->handlePointsUpdate($oldOrder, $order, $settings);
-                    if ($order->user) {
-                        $user = $this->userRepository->find($order->user_id);
-                        $this->updateMembershipLevel($user);
-                    }
+                }
+
+                $this->handlePointsUpdate($oldOrder, $order, $settings);
+                if ($order->user) {
+                    $user = $this->userRepository->find($order->user_id);
+                    $this->updateMembershipLevel($user);
                 }
             }
 
@@ -345,15 +346,25 @@ class OrderService implements OrderServiceInterface
 
     private function handlePointsUpdate($oldOrder, $order, $settings)
     {
-        $amountToExchange = $settings->where('setting_key', 'amount_to_exchange')->first()->plain_value;
-        $amountToExchangeMembership = $settings->where('setting_key', 'amount_to_exchange_membership')->first()->plain_value;
+        $amountToExchangeSetting = $settings->where('setting_key', 'amount_to_exchange')->first();
+        $amountToExchangeMembershipSetting = $settings->where('setting_key', 'amount_to_exchange_membership')->first();
+
+        $amountToExchange = (float) ($amountToExchangeSetting?->plain_value ?? 100);
+        $amountToExchangeMembership = (float) ($amountToExchangeMembershipSetting?->plain_value ?? 100);
+
+        if ($amountToExchange <= 0) {
+            $amountToExchange = 100;
+        }
+        if ($amountToExchangeMembership <= 0) {
+            $amountToExchangeMembership = 100;
+        }
 
         if (!$order->user_id) {
             return;
         }
 
         // Tích điểm dựa trên giá trị tiền hàng của đơn hàng (không cần check điều kiện tối thiểu)
-        $validTotal = $order->total;
+        $validTotal = (float) $order->total;
         $pointsChange = $validTotal / $amountToExchange;
         $pointsChangeMembership = $validTotal / $amountToExchangeMembership;
 
@@ -361,7 +372,7 @@ class OrderService implements OrderServiceInterface
             $this->handleOrderCompleted($order, $pointsChange, $pointsChangeMembership);
         }
 
-        if ($oldOrder->status == OrderStatus::Completed) {
+        if ($oldOrder->status == OrderStatus::Completed && $order->status != OrderStatus::Completed) {
             $this->handleOrderUnCompleted($order, $pointsChange, $pointsChangeMembership);
         }
     }
@@ -370,14 +381,20 @@ class OrderService implements OrderServiceInterface
     {
         // Refresh user để lấy dữ liệu mới nhất
         $user = $this->userRepository->find($order->user_id);
+        if (!$user) {
+            return;
+        }
 
         // Lưu membership_id cũ để so sánh sau khi cập nhật
         $oldMembershipId = $user->membership_id;
 
         // Cập nhật điểm cho user
+        $currentPoints = (float) ($user->points ?? 0);
+        $currentMembershipPoints = (float) ($user->membership_level_points ?? 0);
+
         $this->userRepository->update($order->user_id, [
-            'points' => $user->points + $pointsChange,
-            'membership_level_points' => $user->membership_level_points + $pointsChangeMembership,
+            'points' => $currentPoints + $pointsChange,
+            'membership_level_points' => $currentMembershipPoints + $pointsChangeMembership,
         ]);
 
         // Refresh user để lấy dữ liệu mới nhất
@@ -425,9 +442,17 @@ class OrderService implements OrderServiceInterface
 
     private function handleOrderUnCompleted($order, $pointsChange, $pointsChangeMembership): void
     {
+        $user = $order->user ?? $this->userRepository->find($order->user_id);
+        if (!$user) {
+            return;
+        }
+
+        $currentPoints = (float) ($user->points ?? 0);
+        $currentMembershipPoints = (float) ($user->membership_level_points ?? 0);
+
         $this->userRepository->update($order->user_id, [
-            'points' => max(0, $order->user->points - $pointsChange),
-            'membership_level_points' => max(0, $order->user->membership_level_points - $pointsChangeMembership),
+            'points' => max(0, $currentPoints - $pointsChange),
+            'membership_level_points' => max(0, $currentMembershipPoints - $pointsChangeMembership),
         ]);
 
         // Refresh user để lấy dữ liệu mới nhất
