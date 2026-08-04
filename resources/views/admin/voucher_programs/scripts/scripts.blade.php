@@ -45,17 +45,17 @@
         const type = discountValueType.value;
         let value = input.value.replace(/( VND| %)/g, "").trim(); // Xóa định dạng hiển thị
 
-        if (type == {{ App\Enums\Discount\DiscountValueType::Percent->value }}) {
+        if (type == '{{ App\Enums\Discount\DiscountValueType::Percent->value }}' || type == 'percent') {
             value = parseInt(value);
-            if (isNaN(value) || value < 0 || value > 100) {
-                showToastify('error', 'Lỗi', 'Giá trị phải lớn hơn 0 và nhỏ hơn 100 khi loại giảm là phần trăm!');
+            if (isNaN(value) || value <= 0 || value > 100) {
+                showToastify('error', 'Lỗi', 'Giá trị giảm giá phải từ 1 đến 100 khi loại giảm là phần trăm!');
                 input.value = ''; // Xóa giá trị không hợp lệ
                 return;
             }
             input.value = value + " %"; // Thêm định dạng %
-        } else if (type == {{ App\Enums\Discount\DiscountValueType::Money->value }}) {
+        } else if (type == '{{ App\Enums\Discount\DiscountValueType::Money->value }}' || type == 'money') {
             value = parseInt(value);
-            if (isNaN(value) || value < 0) {
+            if (isNaN(value) || value <= 0) {
                 showToastify('error', 'Lỗi', 'Giá trị giảm phải lớn hơn 0 khi loại giảm là số tiền cố định!');
                 input.value = ''; // Xóa giá trị không hợp lệ
                 return;

@@ -70,6 +70,12 @@ class VoucherRequest extends BaseRequest
             if ($discountExists || ($voucherExists && $voucherExists->id != $this->id)) {
                 $validator->errors()->add('code', 'Mã giảm giá đã tồn tại.');
             }
+
+            if ($this->type == DiscountValueType::Percent->value || $this->type == 'percent') {
+                if ((float) $this->discount_value > 100) {
+                    $validator->errors()->add('discount_value', 'Giá trị giảm giá theo phần trăm không được vượt quá 100%.');
+                }
+            }
         });
     }
 

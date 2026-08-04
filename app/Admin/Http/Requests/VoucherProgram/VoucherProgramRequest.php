@@ -48,8 +48,18 @@ class VoucherProgramRequest extends BaseRequest
             'discount_value' => ['required', 'numeric', 'min:1'],
             'max_discount_value' => ['required', 'numeric', 'min:1'],
             'avatar' => ['required'],
-            'qty' => ['required', 'numeric', 'min:1'],
         ];
+    }
+
+    protected function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            if ($this->type == DiscountValueType::Percent->value || $this->type == 'percent') {
+                if ((float) $this->discount_value > 100) {
+                    $validator->errors()->add('discount_value', 'Giá trị giảm giá theo phần trăm không được vượt quá 100%.');
+                }
+            }
+        });
     }
 
     public function messages()

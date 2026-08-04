@@ -3,8 +3,10 @@
 namespace App\Admin\Http\Requests\Discount;
 
 use App\Admin\Http\Requests\BaseRequest;
+use App\Enums\Discount\DiscountValueType;
 use App\Models\Discount;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rules\Enum;
 
 class DiscountRequest extends BaseRequest
 {
@@ -24,6 +26,7 @@ class DiscountRequest extends BaseRequest
     {
         return [
             'code' => ['required'],
+            'type' => ['nullable', new Enum(DiscountValueType::class)],
             'date_start' => 'required|date',
             'date_end' => 'required|date|after_or_equal:date_start',
             'max_usage' => ['required', 'numeric', 'min: 1'],
@@ -39,6 +42,7 @@ class DiscountRequest extends BaseRequest
         return [
             'id' => ['required', 'exists:App\Models\Discount,id'],
             'code' => ['required'],
+            'type' => ['nullable', new Enum(DiscountValueType::class)],
             'date_start' => 'required|date',
             'date_end' => 'required|date|after_or_equal:date_start',
             'max_usage' => ['required', 'numeric', 'min: 1'],
@@ -72,6 +76,12 @@ class DiscountRequest extends BaseRequest
 
             if ($voucherExists) {
                 $validator->errors()->add('code', 'Mã giảm giá đã tồn tại.');
+            }
+
+            if ($this->type == DiscountValueType::Percent->value || $this->type == 'percent') {
+                if ((float) $this->discount_value > 100) {
+                    $validator->errors()->add('discount_value', 'Giá trị giảm giá theo phần trăm không được vượt quá 100%.');
+                }
             }
         });
     }
