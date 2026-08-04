@@ -40,7 +40,7 @@ $data = [
                 'routeName' => 'admin.setting.membershipLevel',
                 'icon' => '<i class="ti ti-tool"></i>',
                 'roles' => [],
-                'permissions' => ['settingMembershipLevel'],
+                'permissions' => ['settingGeneral'],
             ],
         ]
     ],
