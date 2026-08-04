@@ -3,7 +3,6 @@
 namespace App\Traits;
 
 use App\Api\V1\Http\Resources\Auth\AuthResource;
-use App\Api\AdminV1\Http\Resources\Auth\AdminResource;
 use App\Models\User;
 use App\Models\Admin;
 use Exception;
@@ -27,23 +26,6 @@ trait JwtService
                 'user' => new AuthResource($user),
             ],
             'message' => __('login_success'),
-        ]);
-    }
-
-    protected function respondWithAdminToken($token, $refreshToken, $admin): JsonResponse
-    {
-        $ttl = config('jwt.ttl', 60); // minutes
-
-        return response()->json([
-            'status' => 200,
-            'message' => 'Đăng nhập thành công',
-            'data' => [
-                'access_token' => $token,
-                'refresh_token' => $refreshToken,
-                'user' => new AdminResource($admin),
-                'token_type' => 'bearer',
-                'expires_in' => $ttl * 60, // seconds
-            ]
         ]);
     }
 

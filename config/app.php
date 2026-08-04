@@ -208,8 +208,6 @@ return [
          */
         App\Api\V1\Providers\RepositoryServiceProvider::class,
         App\Api\V1\Providers\ServiceServiceProvider::class,
-        App\Api\AdminV1\Providers\RepositoryServiceProvider::class,
-        App\Api\AdminV1\Providers\ServiceServiceProvider::class,
     ],
 
     /*

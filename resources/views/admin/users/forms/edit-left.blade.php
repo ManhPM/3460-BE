@@ -4,14 +4,14 @@
             <button class="nav-link text-black active" id="tab-login" data-bs-toggle="tab" data-bs-target="#pane-login"
                 type="button" role="tab" aria-controls="pane-login"
                 aria-selected="true">
-                <i class="ti ti-lock me-1"></i>{{ __('Thông tin đăng nhập') }}
+                <i class="ti ti-lock me-1"></i>{{ __('Đăng nhập') }}
             </button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link text-black" id="tab-basic" data-bs-toggle="tab" data-bs-target="#pane-basic"
                 type="button" role="tab" aria-controls="pane-basic"
                 aria-selected="false">
-                <i class="ti ti-user me-1"></i>{{ __('Thông tin cơ bản') }}
+                <i class="ti ti-user me-1"></i>{{ __('Cơ bản') }}
             </button>
         </li>
         <li class="nav-item" role="presentation">
@@ -25,7 +25,7 @@
             <button class="nav-link text-black" id="tab-affiliate" data-bs-toggle="tab" data-bs-target="#pane-affiliate"
                 type="button" role="tab" aria-controls="pane-affiliate"
                 aria-selected="false">
-                <i class="ti ti-share me-1"></i>{{ __('Thông tin Affiliate') }}
+                <i class="ti ti-share me-1"></i>{{ __('Affiliate') }}
             </button>
         </li>
         <li class="nav-item" role="presentation">
@@ -41,7 +41,7 @@
         <div class="tab-pane fade show active" id="pane-login" role="tabpanel" aria-labelledby="tab-login">
             <div class="card mb-4">
                 <div class="card-header">
-                    <h2 class="mb-0">{{ __('Thông tin đăng nhập') }}</h2>
+                    <h2 class="mb-0">{{ __('Đăng nhập') }}</h2>
                 </div>
                 <div class="row card-body">
                     <div class="col-md-6 col-12">
@@ -77,7 +77,7 @@
         <div class="tab-pane fade" id="pane-basic" role="tabpanel" aria-labelledby="tab-basic">
             <div class="card mb-4">
                 <div class="card-header">
-                    <h2 class="mb-0">{{ __('Thông tin cơ bản') }}</h2>
+                    <h2 class="mb-0">{{ __('Cơ bản') }}</h2>
                 </div>
                 <div class="row card-body">
                     <div class="col-md-6 col-sm-12">
@@ -232,7 +232,7 @@
         <div class="tab-pane fade" id="pane-affiliate" role="tabpanel" aria-labelledby="tab-affiliate">
             <div class="card mb-4">
                 <div class="card-header">
-                    <h2 class="mb-0">{{ __('Thông tin Affiliate') }}</h2>
+                    <h2 class="mb-0">{{ __('Affiliate') }}</h2>
                 </div>
                 <div class="row card-body">
                     <div class="mb-3">

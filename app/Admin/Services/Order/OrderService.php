@@ -451,35 +451,21 @@ class OrderService implements OrderServiceInterface
             return; // Đã xử lý rồi, không tạo lại
         }
 
-        // Lấy tất cả order details có affiliate_code
+        // 1. Lấy tất cả order details có affiliate_code riêng
         $orderDetails = $order->details()->whereNotNull('affiliate_code')->get();
 
-        if ($orderDetails->isEmpty()) {
-            return;
-        }
+        if ($orderDetails->isNotEmpty()) {
+            $affiliateEarnings = $orderDetails->groupBy('affiliate_code')->map(function ($details) {
+                return $details->sum('affiliate_earning');
+            });
 
-        // Nhóm theo affiliate_code và tính tổng earning
-        $affiliateEarnings = $orderDetails->groupBy('affiliate_code')->map(function ($details) {
-            return $details->sum('affiliate_earning');
-        });
-
-        // Lấy danh sách các affiliate_code duy nhất để gửi thông báo
-        $affiliateCodes = $orderDetails->pluck('affiliate_code')->unique();
-
-        // Tạo wallet transaction cho từng affiliate và gửi thông báo
-        foreach ($affiliateEarnings as $affiliateCode => $totalEarning) {
-            // Tìm user có affiliate_code này
-            $affiliateUser = $this->userRepository->getBy(['affiliate_code' => $affiliateCode])->first();
-
-            if ($affiliateUser) {
-                if ($totalEarning > 0) {
-                    // Cộng tiền vào ví bằng increment để tránh race condition
+            foreach ($affiliateEarnings as $affiliateCode => $totalEarning) {
+                $affiliateUser = \App\Models\User::where('affiliate_code', $affiliateCode)->orWhere('code', $affiliateCode)->first();
+                if ($affiliateUser && $totalEarning > 0) {
                     $affiliateUser->increment('wallet_balance', $totalEarning);
-
-                    // Refresh để lấy wallet_balance mới nhất sau khi cộng
+                    $affiliateUser->increment('commission', $totalEarning);
                     $affiliateUser->refresh();
 
-                    // Tạo wallet transaction
                     \App\Models\WalletTransaction::create([
                         'user_id' => $affiliateUser->id,
                         'amount' => $totalEarning,
@@ -489,7 +475,6 @@ class OrderService implements OrderServiceInterface
                         'note' => "Hoa hồng từ đơn hàng #{$order->code}",
                     ]);
 
-                    // Gửi thông báo cho affiliate user về việc nhận tiền hoa hồng
                     $affiliateMessage = "Bạn đã nhận được " . number_format($totalEarning, 0, ',', '.') . " đ hoa hồng từ đơn hàng #{$order->code}";
                     $this->sendNotification(
                         $affiliateUser->id,
@@ -497,28 +482,41 @@ class OrderService implements OrderServiceInterface
                         $affiliateMessage,
                         $affiliateUser->device_token
                     );
-                } else {
-                    // Gửi thông báo cho affiliate user về việc đơn hàng hoàn thành (dù không có hoa hồng)
-                    $affiliateMessage = "Đơn hàng #{$order->code} mà bạn giới thiệu đã hoàn thành.";
-                    $this->sendNotification(
-                        $affiliateUser->id,
-                        "Đơn hàng đã hoàn thành",
-                        $affiliateMessage,
-                        $affiliateUser->device_token
-                    );
                 }
             }
+            return;
         }
 
-        // Gửi thông báo cho các affiliate_code khác không có earning (nếu có)
-        foreach ($affiliateCodes as $affiliateCode) {
-            if (!isset($affiliateEarnings[$affiliateCode])) {
-                $affiliateUser = $this->userRepository->getBy(['affiliate_code' => $affiliateCode])->first();
-                if ($affiliateUser) {
-                    $affiliateMessage = "Đơn hàng #{$order->code} mà bạn giới thiệu đã hoàn thành.";
+        // 2. Nếu sản phẩm không có affiliate_code riêng, kiểm tra xem người đặt hàng có referrer_code không
+        $orderUser = $order->user;
+        if ($orderUser && !empty($orderUser->referrer_code)) {
+            $affiliateUser = \App\Models\User::where('affiliate_code', $orderUser->referrer_code)
+                ->orWhere('code', $orderUser->referrer_code)
+                ->first();
+
+            if ($affiliateUser) {
+                // Lấy tỷ lệ % hoa hồng từ Cấu hình (mặc định 5%)
+                $commissionPercent = (float) (\App\Models\Setting::where('setting_key', 'commission_percentage')->value('plain_value') ?? 5);
+                $totalEarning = round(($order->total * $commissionPercent) / 100);
+
+                if ($totalEarning > 0) {
+                    $affiliateUser->increment('wallet_balance', $totalEarning);
+                    $affiliateUser->increment('commission', $totalEarning);
+                    $affiliateUser->refresh();
+
+                    \App\Models\WalletTransaction::create([
+                        'user_id' => $affiliateUser->id,
+                        'amount' => $totalEarning,
+                        'type' => \App\Enums\Transaction\WalletTransactionType::Affiliate->value,
+                        'status' => \App\Enums\Transaction\WalletTransactionStatus::Approved->value,
+                        'order_id' => $order->id,
+                        'note' => "Hoa hồng giới thiệu ({$commissionPercent}%) từ đơn hàng #{$order->code} của {$orderUser->fullname}",
+                    ]);
+
+                    $affiliateMessage = "Bạn đã nhận được " . number_format($totalEarning, 0, ',', '.') . " đ hoa hồng giới thiệu từ đơn hàng #{$order->code} của {$orderUser->fullname}";
                     $this->sendNotification(
                         $affiliateUser->id,
-                        "Đơn hàng đã hoàn thành",
+                        "Nhận hoa hồng affiliate",
                         $affiliateMessage,
                         $affiliateUser->device_token
                     );
