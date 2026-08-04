@@ -9,6 +9,8 @@ use App\Api\V1\Http\Requests\Affiliate\UpdateAffiliateRequest;
 use App\Api\V1\Http\Resources\WalletTransaction\WalletTransactionResource;
 use App\Api\V1\Repositories\WalletTransaction\WalletTransactionRepositoryInterface;
 use App\Api\V1\Support\Response;
+use App\Enums\Transaction\WalletTransactionType;
+use App\Enums\Transaction\WalletTransactionStatus;
 use App\Models\WalletTransaction;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -73,7 +75,7 @@ class AffiliateController extends Controller
             $user->save();
         }
 
-        // Lấy thống kê theo tháng (tháng 1-12 năm nay)
+        // Lấy thống kê hoa hồng cộng tác viên theo tháng (tháng 1-12 năm nay)
         $currentYear = Carbon::now()->year;
         $monthlyStats = [];
 
@@ -82,6 +84,8 @@ class AffiliateController extends Controller
             $endDate = Carbon::create($currentYear, $month, 1)->endOfMonth();
 
             $stats = WalletTransaction::where('user_id', $user->id)
+                ->where('type', WalletTransactionType::Affiliate)
+                ->whereIn('status', [WalletTransactionStatus::Approved, WalletTransactionStatus::Pending])
                 ->whereBetween('created_at', [$startDate, $endDate])
                 ->selectRaw('SUM(amount) as total_amount, COUNT(*) as transaction_count')
                 ->first();
