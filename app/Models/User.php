@@ -207,5 +207,10 @@ class User extends Authenticatable implements JWTSubject
             ) as total_savings')
             ->value('total_savings') ?? 0.0;
     }
+
+    public function referrals(): HasMany
+    {
+        return $this->hasMany(User::class, 'referrer_code', 'affiliate_code');
+    }
 }
 

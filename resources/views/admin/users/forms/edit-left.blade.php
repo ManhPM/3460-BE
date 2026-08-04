@@ -250,6 +250,91 @@
                     </div>
                 </div>
             </div>
+
+            @php
+                $referredUsers = \App\Models\User::whereNotNull('referrer_code')
+                    ->where(function($q) use ($instance) {
+                        if ($instance->affiliate_code) {
+                            $q->where('referrer_code', $instance->affiliate_code);
+                        }
+                        if ($instance->code) {
+                            $q->orWhere('referrer_code', $instance->code);
+                        }
+                    })
+                    ->with('member')
+                    ->latest()
+                    ->get();
+            @endphp
+
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h2 class="mb-0">{{ __('Danh sách người được giới thiệu') }} ({{ $referredUsers->count() }})</h2>
+                </div>
+                <div class="card-body p-0">
+                    @if($referredUsers->isNotEmpty())
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="text-center" style="width: 60px;">#</th>
+                                        <th>{{ __('Họ và tên') }}</th>
+                                        <th>{{ __('Email') }}</th>
+                                        <th>{{ __('Số điện thoại') }}</th>
+                                        <th>{{ __('Hạng thành viên') }}</th>
+                                        <th>{{ __('Ngày đăng ký') }}</th>
+                                        <th class="text-center" style="width: 100px;">{{ __('Thao tác') }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($referredUsers as $key => $referredUser)
+                                        <tr>
+                                            <td class="text-center fw-bold">{{ $key + 1 }}</td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <img src="{{ asset($referredUser->avatar ?? 'public/assets/images/default-avatar.png') }}"
+                                                         alt="Avatar"
+                                                         class="rounded-circle me-2"
+                                                         style="width: 36px; height: 36px; object-fit: cover;">
+                                                    <div>
+                                                        <a href="{{ route('admin.user.edit', $referredUser->id) }}" class="fw-semibold text-primary text-decoration-none">
+                                                            {{ $referredUser->fullname }}
+                                                        </a>
+                                                        @if($referredUser->code)
+                                                            <div class="text-muted small">Mã: {{ $referredUser->code }}</div>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>{{ $referredUser->email ?? '-' }}</td>
+                                            <td>{{ $referredUser->phone ?? '-' }}</td>
+                                            <td>
+                                                @if($referredUser->member)
+                                                    <span class="badge bg-label-info">{{ $referredUser->member->name }}</span>
+                                                @else
+                                                    <span class="badge bg-label-secondary">{{ __('Mặc định') }}</span>
+                                                @endif
+                                            </td>
+                                            <td>{{ $referredUser->created_at ? $referredUser->created_at->format('d/m/Y H:i') : '-' }}</td>
+                                            <td class="text-center">
+                                                <a href="{{ route('admin.user.edit', $referredUser->id) }}"
+                                                   class="btn btn-sm btn-icon btn-outline-primary"
+                                                   title="{{ __('Chi tiết') }}">
+                                                    <i class="ti ti-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <div class="text-center py-4 text-muted">
+                            <i class="ti ti-users-minus mb-2" style="font-size: 36px; opacity: 0.5;"></i>
+                            <p class="mb-0">{{ __('Chưa có người dùng nào đăng ký qua mã giới thiệu này.') }}</p>
+                        </div>
+                    @endif
+                </div>
+            </div>
         </div>
 
         <div class="tab-pane fade" id="pane-point-history" role="tabpanel" aria-labelledby="tab-point-history">
