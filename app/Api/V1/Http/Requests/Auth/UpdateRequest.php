@@ -27,6 +27,9 @@ class UpdateRequest extends BaseRequest
             'province_id' => ['nullable', 'exists:provinces,id'],
             'ward_id' => ['nullable', 'exists:wards,id'],
             'avatar' => ['nullable'],
+            'bank_name' => ['nullable', 'string'],
+            'bank_account' => ['nullable', 'string'],
+            'bank_account_number' => ['nullable', 'string'],
         ];
     }
 
