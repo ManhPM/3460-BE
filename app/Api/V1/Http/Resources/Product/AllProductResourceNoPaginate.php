@@ -57,16 +57,20 @@ class AllProductResourceNoPaginate extends ResourceCollection
                 $prices = [];
                 $promotion_prices = [];
                 foreach ($product->productVariations as $variation) {
-                    if (!is_null($variation->promotion_price)) {
-                        $prices[] = $variation->promotion_price;
-                        $promotion_prices[] = $variation->promotion_price;
-                    } elseif (!is_null($variation->price)) {
-                        $prices[] = $variation->price;
-                        $promotion_prices[] = $variation->price;
+                    $vPrice = $variation->price ?? $variation->promotion_price;
+                    $vPromoPrice = (!is_null($variation->promotion_price) && $variation->promotion_price > 0)
+                        ? $variation->promotion_price
+                        : $vPrice;
+
+                    if (!is_null($vPrice)) {
+                        $prices[] = $vPrice;
+                    }
+                    if (!is_null($vPromoPrice)) {
+                        $promotion_prices[] = $vPromoPrice;
                     }
                 }
 
-                $data['price'] = !empty($prices) ? max($prices) : 0;
+                $data['price'] = !empty($prices) ? min($prices) : 0;
                 $data['promotion_price'] = !empty($promotion_prices) ? min($promotion_prices) : 0;
             } else {
                 $data['price'] = 0;

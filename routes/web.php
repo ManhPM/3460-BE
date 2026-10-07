@@ -293,6 +293,14 @@ Route::controller(App\Api\V1\Http\Controllers\Product\ProductController::class)
         Route::get('/{id}', 'redirect')->name('product.redirect');
     });
 
+// Affiliate Register redirect route - để mở app đăng ký từ web
+Route::get('/register', function (\Illuminate\Http\Request $request) {
+    $ref = $request->query('ref') ?? $request->query('affiliate_code');
+    return view('register-redirect', [
+        'ref' => $ref,
+    ]);
+})->name('register.redirect');
+
 Route::controller(App\Http\Controllers\Post\PostController::class)
     ->as('post.')
     ->group(function () {

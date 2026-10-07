@@ -112,12 +112,16 @@ class ShowProductResource extends JsonResource
                 $prices = [];
                 $promotion_prices = [];
                 foreach ($this->productVariations as $variation) {
-                    if (!is_null($variation->promotion_price)) {
-                        $prices[] = $variation->promotion_price;
-                        $promotion_prices[] = $variation->promotion_price;
-                    } elseif (!is_null($variation->price)) {
-                        $prices[] = $variation->price;
-                        $promotion_prices[] = $variation->price;
+                    $vPrice = $variation->price ?? $variation->promotion_price;
+                    $vPromoPrice = (!is_null($variation->promotion_price) && $variation->promotion_price > 0)
+                        ? $variation->promotion_price
+                        : $vPrice;
+
+                    if (!is_null($vPrice)) {
+                        $prices[] = $vPrice;
+                    }
+                    if (!is_null($vPromoPrice)) {
+                        $promotion_prices[] = $vPromoPrice;
                     }
                 }
 

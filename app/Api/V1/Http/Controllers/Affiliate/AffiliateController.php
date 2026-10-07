@@ -199,10 +199,12 @@ class AffiliateController extends Controller
         $user = $this->getCurrentUser();
         $data = $request->validated();
 
-        // Tự động sinh affiliate_code nếu user chưa có
         $updateData = [];
 
-        if (!$user->affiliate_code) {
+        // Cho phép cập nhật affiliate_code tùy chỉnh (tên, SĐT)
+        if (isset($data['affiliate_code']) && !empty($data['affiliate_code'])) {
+            $updateData['affiliate_code'] = $data['affiliate_code'];
+        } elseif (!$user->affiliate_code) {
             $updateData['affiliate_code'] = $this->createAffiliateCode();
         }
 
