@@ -534,6 +534,18 @@ class AuthController extends Controller
             $data['avatar'] = $this->fileService->uploadSingleFileBase64($avatar);
         }
 
+        if (isset($data['phone']) && !empty($data['phone'])) {
+            $newPhone = trim($data['phone']);
+            $oldAffiliateCode = $user->affiliate_code;
+            if ($oldAffiliateCode !== $newPhone) {
+                $data['affiliate_code'] = $newPhone;
+                if ($oldAffiliateCode) {
+                    \App\Models\User::where('referrer_code', $oldAffiliateCode)->update(['referrer_code' => $newPhone]);
+                    \App\Models\OrderDetail::where('affiliate_code', $oldAffiliateCode)->update(['affiliate_code' => $newPhone]);
+                }
+            }
+        }
+
         $user->update($data);
 
         return response()->json([

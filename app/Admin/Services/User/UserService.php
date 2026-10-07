@@ -47,7 +47,6 @@ class UserService implements UserServiceInterface
 
     public function update(Request $request): object|bool
     {
-
         DB::beginTransaction();
         try {
             $data = $request->validated();
@@ -55,6 +54,23 @@ class UserService implements UserServiceInterface
                 $data['password'] = bcrypt($data['password']);
             } else {
                 unset($data['password']);
+            }
+
+            $currentUser = $this->repository->find($data['id']);
+            if ($currentUser) {
+                $newPhone = !empty($data['phone']) ? trim($data['phone']) : null;
+                $oldAffiliateCode = $currentUser->affiliate_code;
+
+                // Đồng bộ mã affiliate theo số điện thoại khi cập nhật trên CMS
+                if ($newPhone && $oldAffiliateCode !== $newPhone) {
+                    $data['affiliate_code'] = $newPhone;
+
+                    // Đồng bộ cấp dưới (referrer_code) và hoa hồng đơn hàng cũ (order_details)
+                    if ($oldAffiliateCode) {
+                        \App\Models\User::where('referrer_code', $oldAffiliateCode)->update(['referrer_code' => $newPhone]);
+                        \App\Models\OrderDetail::where('affiliate_code', $oldAffiliateCode)->update(['affiliate_code' => $newPhone]);
+                    }
+                }
             }
 
             $user = $this->repository->update($data['id'], $data);
