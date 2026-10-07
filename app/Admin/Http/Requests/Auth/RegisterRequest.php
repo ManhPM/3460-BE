@@ -14,6 +14,7 @@ class RegisterRequest extends BaseRequest
             'fullname' => ['required', 'string'],
             'phone' => [
                 'required',
+                'regex:/^([0-9]{10})$/',
             ],
             'email' => ['required', 'email'],
             'password' => ['required', 'string'],
@@ -34,5 +35,13 @@ class RegisterRequest extends BaseRequest
                 $validator->errors()->add('phone', __('Số điện thoại đã được đăng ký.'));
             }
         });
+    }
+
+    public function messages()
+    {
+        return [
+            'phone.required' => __('Vui lòng nhập số điện thoại'),
+            'phone.regex' => __('Số điện thoại phải có đúng 10 chữ số'),
+        ];
     }
 }

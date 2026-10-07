@@ -11,7 +11,7 @@ class VerifyPhoneRequest extends BaseRequest
     protected function methodPost()
     {
         return [
-            'phone' => ['required'],
+            'phone' => ['required', 'regex:/^([0-9]{10})$/'],
         ];
     }
 
@@ -23,5 +23,13 @@ class VerifyPhoneRequest extends BaseRequest
                 $validator->errors()->add('phone', __('auth.phone_already_verified_another_account'));
             }
         });
+    }
+
+    public function messages()
+    {
+        return [
+            'phone.required' => __('Vui lòng nhập số điện thoại'),
+            'phone.regex' => __('Số điện thoại phải có đúng 10 chữ số'),
+        ];
     }
 }

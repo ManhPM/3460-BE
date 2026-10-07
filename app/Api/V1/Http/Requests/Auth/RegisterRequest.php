@@ -18,7 +18,8 @@ class RegisterRequest extends BaseRequest
         return [
             'fullname' => ['required', 'string'],
             'phone' => [
-                'nullable',
+                'required',
+                'regex:/^([0-9]{10})$/',
             ],
             'bank_name' => [
                 'nullable',
@@ -60,7 +61,8 @@ class RegisterRequest extends BaseRequest
         return [
             'fullname.required' => __('please_enter_fullname'),
             'fullname.max' => __('fullname_max'),
-            'phone.regex' => __('phone_invalid'),
+            'phone.required' => __('Vui lòng nhập số điện thoại'),
+            'phone.regex' => __('Số điện thoại phải có đúng 10 chữ số'),
             'phone.unique' => __('phone_unique'),
             'email.required' => __('please_enter_email'),
             'email.email' => __('email_invalid'),

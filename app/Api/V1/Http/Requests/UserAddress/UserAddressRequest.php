@@ -13,7 +13,7 @@ class UserAddressRequest extends BaseRequest
             'province_id' => ['required', 'exists:App\Models\Province,id'],
             'ward_id' => ['required', 'exists:App\Models\Ward,id'],
             'address' => ['required'],
-            'phone' => ['required'],
+            'phone' => ['required', 'regex:/^([0-9]{10})$/'],
             'email' => ['nullable', 'email'],
             'name' => ['required'],
             'fullname' => ['required'],
@@ -28,7 +28,7 @@ class UserAddressRequest extends BaseRequest
             'province_id' => ['required', 'exists:App\Models\Province,id'],
             'ward_id' => ['required', 'exists:App\Models\Ward,id'],
             'address' => ['required'],
-            'phone' => ['required'],
+            'phone' => ['required', 'regex:/^([0-9]{10})$/'],
             'email' => ['nullable', 'email'],
             'name' => ['required'],
             'fullname' => ['required'],
@@ -52,5 +52,13 @@ class UserAddressRequest extends BaseRequest
                 $validator->errors()->add('address', __('user_address.address_exists'));
             }
         });
+    }
+
+    public function messages(): array
+    {
+        return [
+            'phone.required' => __('Vui lòng nhập số điện thoại'),
+            'phone.regex' => __('Số điện thoại phải có đúng 10 chữ số'),
+        ];
     }
 }
