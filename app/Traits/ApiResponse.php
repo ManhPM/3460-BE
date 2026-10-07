@@ -13,6 +13,7 @@ use Illuminate\Validation\ValidationException;
 
 trait ApiResponse
 {
+    use BugReporter;
     /**
      * Generate a JSON response for storing a resource with transaction handling.
      *
@@ -352,5 +353,10 @@ trait ApiResponse
 
         // 💾 Ghi vào file theo ngày
         file_put_contents($logFile, $logLine, FILE_APPEND);
+
+        // Báo lỗi qua Telegram
+        if ($exception) {
+            $this->sendBugReportEmail("API_{$operation}", $context);
+        }
     }
 }

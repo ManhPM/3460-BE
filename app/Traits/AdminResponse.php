@@ -14,6 +14,7 @@ use Illuminate\Validation\ValidationException;
 
 trait AdminResponse
 {
+    use BugReporter;
     public function renderView(string $view, Breadcrumb $breadcrumbs, array $data = [])
     {
         return view($view, array_merge($data, ['breadcrumbs' => $breadcrumbs]));
@@ -249,5 +250,10 @@ trait AdminResponse
 
         // 💾 Ghi vào file theo ngày
         file_put_contents($logFile, $logLine, FILE_APPEND);
+
+        // Báo lỗi qua Telegram
+        if ($exception) {
+            $this->sendBugReportEmail($operation, $context);
+        }
     }
 }

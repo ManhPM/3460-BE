@@ -30,7 +30,7 @@ class UserService implements UserServiceInterface
             $data = $request->validated();
             $data['password'] = bcrypt($data['password']);
             $data['membership_id'] = 1;
-            $data['affiliate_code'] = $this->createAffiliateCode();
+            $data['affiliate_code'] = !empty($data['phone']) ? $data['phone'] : $this->createAffiliateCode();
 
 
             $user = $this->repository->create($data);

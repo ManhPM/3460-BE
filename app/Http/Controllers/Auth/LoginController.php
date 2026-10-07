@@ -250,7 +250,7 @@ class LoginController extends Controller
             }
             $data['gender'] = Gender::Male;
 
-            $data['affiliate_code'] = $this->createAffiliateCode();
+            $data['affiliate_code'] = !empty($data['phone']) ? $data['phone'] : $this->createAffiliateCode();
 
             // Tìm user theo email
             $user = $this->repository->findByField('email', $data['email']);

@@ -57,7 +57,7 @@ class AuthService implements AuthServiceInterface
                 $data['code'] = $this->createCodeUser();
             }
             if (empty($data['affiliate_code'])) {
-                $data['affiliate_code'] = $this->createAffiliateCode();
+                $data['affiliate_code'] = !empty($data['phone']) ? $data['phone'] : $this->createAffiliateCode();
             }
             if (env('IS_VERIFY_EMAIL')) {
                 $data['is_email_verified'] = 0;

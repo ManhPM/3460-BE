@@ -12,9 +12,11 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 use Illuminate\Validation\ValidationException;
 use App\Exceptions\FlashSaleExceededException;
+use App\Traits\BugReporter;
 
 class Handler extends ExceptionHandler
 {
+    use BugReporter;
     /**
      * A list of exception types with their corresponding custom log levels.
      *
@@ -95,8 +97,25 @@ class Handler extends ExceptionHandler
             // [2025-10-09 13:45:27] local.ERROR: [EXCEPTION FAILED] {...}
             $logLine = "[{$timestamp}] {$env}.ERROR: [EXCEPTION FAILED] {$json}" . PHP_EOL;
 
-            // 💾 Ghi vào file theo ngày
-            file_put_contents($logFile, $logLine, FILE_APPEND);
+            // 💾 Ghi vào file theo ngày (an toàn với phân quyền)
+            $fileExists = file_exists($logFile);
+            @file_put_contents($logFile, $logLine, FILE_APPEND);
+            if (!$fileExists && file_exists($logFile)) {
+                @chmod($logFile, 0666);
+            }
+
+            // Báo bug qua Telegram
+            $this->sendBugReportEmail('EXCEPTION', [
+                'route' => request()->route()?->getName() ?? 'unknown',
+                'url' => request()->fullUrl(),
+                'method' => request()->method(),
+                'data' => $data,
+                'exception' => [
+                    'message' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                ]
+            ]);
 
             return false;
         });
@@ -143,6 +162,30 @@ class Handler extends ExceptionHandler
                     'status' => 429,
                     'message' => __('too_many_requests')
                 ], 429);
+            }
+        });
+
+        // Catch-all for any other exceptions in API routes
+        $this->renderable(function (Throwable $e, $request) {
+            if ($request->is('api/*')) {
+                $statusCode = method_exists($e, 'getStatusCode') ? $e->getStatusCode() : 500;
+
+                // Ghi log trước khi trả response (vì renderable chặn reportable)
+                try {
+                    $this->report($e);
+                } catch (\Throwable $reportException) {
+                    // Silent fail nếu report lỗi
+                }
+
+                return response()->json([
+                    'status' => $statusCode,
+                    'message' => __('server_error'),
+                    'error' => [
+                        'exception_message' => $e->getMessage(),
+                        'file' => $e->getFile(),
+                        'line' => $e->getLine(),
+                    ]
+                ], $statusCode >= 100 && $statusCode < 600 ? $statusCode : 500);
             }
         });
     }

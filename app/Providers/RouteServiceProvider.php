@@ -40,6 +40,18 @@ class RouteServiceProvider extends ServiceProvider
                 ->as('admin.')
                 ->group(base_path('routes/admin.php'));
 
+            // App Deep Link / Web Redirect routes (always active regardless of IS_COMBO)
+            Route::middleware('web')
+                ->group(function () {
+                    Route::get('/product/{id}', [\App\Api\V1\Http\Controllers\Product\ProductController::class, 'redirect'])->name('product.redirect');
+                    Route::get('/register', function (\Illuminate\Http\Request $request) {
+                        $ref = $request->query('ref') ?? $request->query('affiliate_code');
+                        return view('register-redirect', [
+                            'ref' => $ref,
+                        ]);
+                    })->name('register.redirect');
+                });
+
             if (env('IS_COMBO')) {
                 Route::middleware('web')
                     ->namespace($this->namespace)

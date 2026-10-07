@@ -71,7 +71,7 @@ class AffiliateController extends Controller
         $user = $this->getCurrentUser();
 
         if (empty($user->affiliate_code)) {
-            $user->affiliate_code = $this->createAffiliateCode();
+            $user->affiliate_code = !empty($user->phone) ? $user->phone : $this->createAffiliateCode();
             $user->save();
         }
 
@@ -203,9 +203,14 @@ class AffiliateController extends Controller
 
         // Cho phép cập nhật affiliate_code tùy chỉnh (tên, SĐT)
         if (isset($data['affiliate_code']) && !empty($data['affiliate_code'])) {
-            $updateData['affiliate_code'] = $data['affiliate_code'];
+            $oldCode = $user->affiliate_code;
+            $newCode = $data['affiliate_code'];
+            if ($oldCode && $oldCode !== $newCode) {
+                \App\Models\User::where('referrer_code', $oldCode)->update(['referrer_code' => $newCode]);
+            }
+            $updateData['affiliate_code'] = $newCode;
         } elseif (!$user->affiliate_code) {
-            $updateData['affiliate_code'] = $this->createAffiliateCode();
+            $updateData['affiliate_code'] = !empty($user->phone) ? $user->phone : $this->createAffiliateCode();
         }
 
         // Chỉ cập nhật các trường được gửi lên
