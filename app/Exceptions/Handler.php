@@ -49,8 +49,8 @@ class Handler extends ExceptionHandler
     public function register()
     {
         $this->reportable(function (Throwable $e) {
-            // 🚫 Skip HttpException (abort) và ValidationException - đã được handle
-            if ($e instanceof HttpException || $e instanceof ValidationException) {
+            // 🚫 Skip HttpException (abort), ValidationException, AuthenticationException - đã được handle
+            if ($e instanceof HttpException || $e instanceof ValidationException || $e instanceof AuthenticationException) {
                 return false;
             }
 
@@ -162,6 +162,14 @@ class Handler extends ExceptionHandler
                     'status' => 429,
                     'message' => __('too_many_requests')
                 ], 429);
+            }
+        });
+        $this->renderable(function (AuthenticationException $e, $request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                return response()->json([
+                    'status' => 401,
+                    'message' => 'unauthenticated'
+                ], 401);
             }
         });
 
