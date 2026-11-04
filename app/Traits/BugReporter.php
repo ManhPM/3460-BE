@@ -8,6 +8,9 @@ use Illuminate\Support\Facades\Cache;
 
 trait BugReporter
 {
+    /**
+     * Alias tương thích với các dự án gọi sendBugReport / sendBugReportTelegram
+     */
     public function sendBugReport(string $operation, array $context): void
     {
         $this->sendBugReportEmail($operation, $context);
@@ -73,6 +76,10 @@ trait BugReporter
         }
     }
 
+    /**
+     * Chuẩn hóa URL thành Path tĩnh (bỏ domain, query string và thay ID số bằng {id})
+     * để chống trùng lặp cùng 1 lỗi trên cùng 1 endpoint.
+     */
     protected function normalizeBugPath(string $url): string
     {
         if ($url === '' || $url === 'N/A') {
@@ -88,6 +95,9 @@ trait BugReporter
         return $path ?: '/';
     }
 
+    /**
+     * Chuẩn hóa đường dẫn file lỗi (bỏ base_path để đồng nhất giữa các bản release).
+     */
     protected function normalizeBugFile(string $file): string
     {
         if ($file === '' || $file === 'N/A') {
@@ -100,23 +110,46 @@ trait BugReporter
         }
 
         $normalized = preg_replace('#^/var/www/[^/]+/release_[^/]+/#', '', $file);
+        $normalized = preg_replace('#^/var/www/[^/]+/#', '', (string) $normalized);
 
         return $normalized ?: $file;
     }
 
-    protected function resolveProjectName(): string
-    {
-        $folder = basename(base_path());
-        if ($folder === 'back-end') {
-            $folder = basename(dirname(base_path())) . '/back-end';
-        }
-        $envName = config('app.name') ?: env('APP_NAME', '');
-        if ($envName && !in_array(strtolower($envName), ['laravel', 'app'], true)) {
-            return "{$folder} ({$envName})";
-        }
-        return $folder;
+    /**
+     * Tạo chuỗi Prompt 1 dòng (không chứa xuống dòng) để click 1 ô trên Google Sheet hoặc Telegram
+     * là copy dán thẳng vào Antigravity/Cursor để AI tự mở đúng file fix ngay.
+     */
+    protected function buildQuickFixPrompt(
+        string $projectFolder,
+        string $appName,
+        string $operation,
+        string $method,
+        string $url,
+        string $route,
+        string $errMsg,
+        string $relativeFile,
+        string $errLine,
+        string $data
+    ): string {
+        $localRoot = "/Applications/XAMPP/xamppfiles/htdocs/{$projectFolder}";
+        $fileMention = $relativeFile !== ''
+            ? "@[{$localRoot}/{$relativeFile}]" . ($errLine !== '' ? " (dòng {$errLine})" : '')
+            : "@[{$localRoot}]";
+
+        $cleanMsg  = preg_replace('/\s+/', ' ', trim($errMsg));
+        $cleanData = preg_replace('/\s+/', ' ', trim($data));
+
+        return "Hãy kiểm tra và fix triệt để lỗi sau trong dự án @[{$localRoot}] ({$appName}) — "
+            . "File lỗi: {$fileMention} — "
+            . "Message lỗi: {$cleanMsg} — "
+            . "Endpoint: {$method} {$url} (Route: {$route} | Thao tác: {$operation}) — "
+            . "Payload: {$cleanData}";
     }
 
+    /**
+     * Kiểm tra và đánh dấu lỗi duy nhất (Unique theo Project + Path + Message + File:Line)
+     * để không bao giờ đẩy trùng lặp lên Google Sheets.
+     */
     protected function acquireUniqueSheetBugLock(string $uniqueKey, bool $bypassCache = false): bool
     {
         if ($bypassCache) {
@@ -149,14 +182,14 @@ trait BugReporter
 
             @file_put_contents($registryFile, json_encode($keys, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
         } catch (\Throwable $e) {
-            // Ignore file permission errors
+            // Bỏ qua lỗi ghi file registry nếu phân quyền hạn chế
         }
 
         return true;
     }
 
     /**
-     * Gửi báo cáo bug qua Google Sheets (LOG BUG MEVIVU) & Telegram Bot.
+     * Gửi báo cáo bug hoặc thông báo hệ thống qua Google Sheets (LOG BUG MEVIVU) & Telegram Bot.
      */
     public function sendBugReportEmail(string $operation, array $context): void
     {
@@ -176,16 +209,43 @@ trait BugReporter
                 $data = substr($data, 0, 500) . '... (truncated)';
             }
 
-            $appName   = $this->resolveProjectName();
+            $folder = basename(base_path()); if ($folder === 'back-end') { $folder = basename(dirname(base_path())) . '/back-end'; } $envName = config('app.name') ?: env('APP_NAME', ''); $appName = ($envName && !in_array(strtolower($envName), ['laravel', 'app'], true)) ? "{$folder} ({$envName})" : $folder;
+
+            // Phân loại loại thông báo (error, warning, success, info)
+            $type = $context['type'] ?? null;
+            if (!$type) {
+                if (str_contains(strtoupper($operation), 'VERIFICATION') || str_contains(strtoupper($operation), 'SUCCESS')) {
+                    $type = 'success';
+                } elseif (str_contains(strtoupper($operation), 'WARN')) {
+                    $type = 'warning';
+                } else {
+                    $type = 'error';
+                }
+            }
+
             $timestamp = now()->format('Y-m-d H:i:s');
+
+            $quickFixPrompt = $this->buildQuickFixPrompt(
+                $folder,
+                $appName,
+                $operation,
+                $method,
+                $url,
+                $route,
+                $errMsg,
+                $relativeFile,
+                $errLine,
+                $data
+            );
 
             $copyContext = [
                 'app'       => $appName,
+                'type'      => $type,
                 'operation' => $operation,
                 'url'       => "{$method} {$url}",
                 'path'      => $pathOnly,
                 'route'     => $route,
-                'error'     => $errMsg,
+                'message'   => $errMsg,
                 'file'      => $fileLine,
                 'data'      => $context['data'] ?? [],
                 'timestamp' => $timestamp,
@@ -202,7 +262,7 @@ trait BugReporter
             $uniqueSignature = "{$appName}|{$pathOnly}|{$errMsg}|{$fileLine}";
             $uniqueKey       = md5($uniqueSignature);
 
-            if ($this->acquireUniqueSheetBugLock($uniqueKey, $bypassCache)) {
+            if ($type === 'error' && $this->acquireUniqueSheetBugLock($uniqueKey, $bypassCache)) {
                 $sheetWebhookUrl = env(
                     'GOOGLE_SHEET_BUG_WEBHOOK_URL',
                     'https://script.google.com/macros/s/AKfycbwpm0hQDbQ3POoJChFhnET-w7qYj2F4qy8ZzzYVOStm3dvIegRUwYdbEI93tOhpRCyRKg/exec'
@@ -214,41 +274,67 @@ trait BugReporter
                             ->withOptions(['allow_redirects' => true])
                             ->post($sheetWebhookUrl, [
                                 'spreadsheet_id' => '1ow0JE8kxuXNOH6yy3v5fIHl1U2dwRFtEplCzaVWTPoU',
-                                'target'       => 'mevivu',
-                                'unique_key'   => $uniqueKey,
-                                'project'      => $appName,
-                                'operation'    => $operation,
-                                'method'       => $method,
-                                'url'          => $url,
-                                'path'         => $pathOnly,
-                                'route'        => $route,
-                                'message'      => $errMsg,
-                                'file'         => $relativeFile,
-                                'line'         => $errLine,
-                                'file_line'    => $fileLine,
-                                'data'         => $data,
-                                'context_json' => $copyContextJsonStr,
-                                'timestamp'    => $timestamp,
+                                'target'         => 'mevivu',
+                                'unique_key'     => $uniqueKey,
+                                'project'        => $appName,
+                                'operation'      => $operation,
+                                'type'           => $type,
+                                'method'         => $method,
+                                'url'            => $url,
+                                'path'           => $pathOnly,
+                                'route'          => $route,
+                                'message'        => $errMsg,
+                                'file'           => $relativeFile,
+                                'line'           => $errLine,
+                                'file_line'      => $fileLine,
+                                'data'           => $data,
+                                'copy_prompt'    => $quickFixPrompt,
+                                'context_json'   => $quickFixPrompt,
+                                'timestamp'      => $timestamp,
                             ]);
                     } catch (\Throwable $sheetEx) {
-                        Log::warning('[BugReporter] Không thể đẩy log lên Google Sheets MEVIVU: ' . $sheetEx->getMessage());
+                        Log::warning('[BugReporter] Không thể đẩy log lên Google Sheets GUD: ' . $sheetEx->getMessage());
                     }
                 }
             }
 
-            // 2. Gửi thông báo qua Telegram (tránh trùng lặp trong 5 phút)
+            // 2. Gửi thông báo qua Telegram (tránh trùng lặp trong 3 phút)
             $telegramCacheKey = 'bug_report_' . $uniqueKey;
-            if (!$bypassCache && !Cache::add($telegramCacheKey, true, 300)) {
+            if (!$bypassCache && !Cache::add($telegramCacheKey, true, 180)) {
                 return;
             }
 
-            $botToken = config('services.telegram_bug.bot_token') ?: (env('TELEGRAM_BUG_BOT_TOKEN') ?: env('TELEGRAM_BOT_TOKEN') ?: '8713520983:AAFSfxUScnSU4GCyu3aNiLQ0TkOpW9RLSpg');
-            $chatId   = config('services.telegram_bug.chat_id') ?: (env('TELEGRAM_BUG_CHAT_ID') ?: env('TELEGRAM_CHAT_ID') ?: '8740034094');
+            $botToken = config('custom_api.telegram_bug_bot_token') ?: (env('TELEGRAM_BUG_BOT_TOKEN') ?: config('custom_api.telegram_bot_token') ?: env('TELEGRAM_BOT_TOKEN'));
+            $chatId   = config('custom_api.telegram_bug_chat_id') ?: (env('TELEGRAM_BUG_CHAT_ID') ?: config('custom_api.telegram_chat_id') ?: env('TELEGRAM_CHAT_ID'));
 
             if (empty($botToken) || empty($chatId)) {
                 return;
             }
 
+            switch ($type) {
+                case 'success':
+                    $headerTitle = "✅ <b>THÔNG BÁO HỆ THỐNG</b>";
+                    $labelContent = "📌 <b>Nội dung:</b>";
+                    $footerText = "🤖 Hệ thống thông báo tự động";
+                    break;
+                case 'warning':
+                    $headerTitle = "⚠️ <b>CẢNH BÁO HỆ THỐNG</b>";
+                    $labelContent = "⚠️ <b>Cảnh báo:</b>";
+                    $footerText = "🤖 Hệ thống cảnh báo tự động";
+                    break;
+                case 'info':
+                    $headerTitle = "ℹ️ <b>THÔNG TIN HỆ THỐNG</b>";
+                    $labelContent = "ℹ️ <b>Thông tin:</b>";
+                    $footerText = "🤖 Hệ thống thông tin tự động";
+                    break;
+                default:
+                    $headerTitle = "🚨 <b>BÁO CÁO LỖI HỆ THỐNG</b>";
+                    $labelContent = "❌ <b>Chi tiết lỗi:</b>";
+                    $footerText = "🤖 Hệ thống tự động báo lỗi";
+                    break;
+            }
+
+            $safeQuickFixPrompt  = htmlspecialchars($quickFixPrompt, ENT_NOQUOTES, 'UTF-8');
             $safeCopyContextJson = htmlspecialchars($copyContextJsonStr, ENT_NOQUOTES, 'UTF-8');
             $safeUrl             = htmlspecialchars("{$method} {$url}", ENT_NOQUOTES, 'UTF-8');
             $safeRoute           = htmlspecialchars($route, ENT_NOQUOTES, 'UTF-8');
@@ -256,52 +342,45 @@ trait BugReporter
             $safeErrFile         = htmlspecialchars($relativeFile ?: $errFile, ENT_NOQUOTES, 'UTF-8');
             $safeData            = htmlspecialchars($data, ENT_NOQUOTES, 'UTF-8');
 
-            $message  = "🚨 <b>BÁO CÁO LỖI HỆ THỐNG</b>\n";
+            $message  = "{$headerTitle}\n";
             $message .= "━━━━━━━━━━━━━━━━━━━━━━\n\n";
             $message .= "📌 <b>Ứng dụng:</b> {$appName}\n";
-            $message .= "⚠️ <b>Thao tác:</b> {$operation}\n";
-            $message .= "🌐 <b>URL:</b> <code>{$safeUrl}</code>\n";
-            $message .= "🛣️ <b>Route:</b> <code>{$safeRoute}</code>\n\n";
-            $message .= "❌ <b>Lỗi:</b> {$safeErrMsg}\n";
-            if ($safeErrFile) {
+            $message .= "⚙️ <b>Thao tác:</b> <code>{$operation}</code>\n";
+            if ($url !== 'N/A') {
+                $message .= "🌐 <b>URL:</b> <code>{$safeUrl}</code>\n";
+            }
+            if ($route !== 'N/A') {
+                $message .= "🛣️ <b>Route:</b> <code>{$safeRoute}</code>\n";
+            }
+            $message .= "\n";
+
+            $message .= "{$labelContent} {$safeErrMsg}\n";
+            if ($safeErrFile && $safeErrFile !== 'N/A') {
                 $message .= "📍 <b>Vị trí:</b> <code>{$safeErrFile}:{$errLine}</code>\n";
             }
+
             if ($data && $data !== '[]' && $data !== '{}') {
-                $message .= "\n📋 <b>Dữ liệu:</b>\n<pre>{$safeData}</pre>\n";
+                $message .= "\n📋 <b>Dữ liệu kèm theo:</b>\n<pre>{$safeData}</pre>\n";
             }
-            $message .= "\n📋 <b>Context (Chạm để copy):</b>\n";
+
+            $message .= "\n🛠 <b>Copy nhanh để Fix (1-Tap):</b>\n";
+            $message .= "<code>{$safeQuickFixPrompt}</code>\n";
+
+            $message .= "\n📋 <b>Context JSON:</b>\n";
             $message .= "<pre><code class=\"language-json\">{$safeCopyContextJson}</code></pre>\n";
+
             $message .= "\n━━━━━━━━━━━━━━━━━━━━━━\n";
             $message .= "🕐 <b>Thời gian:</b> " . now()->format('H:i:s d/m/Y') . "\n";
-            $message .= "🤖 Hệ thống tự động báo lỗi";
+            $message .= "{$footerText}";
 
-            if (mb_strlen($message) > 3900) {
-                $truncatedJson = htmlspecialchars(substr($copyContextJsonStr, 0, 1200) . "\n... (truncated)", ENT_NOQUOTES, 'UTF-8');
-                $message  = "🚨 <b>BÁO CÁO LỖI HỆ THỐNG</b>\n";
-                $message .= "━━━━━━━━━━━━━━━━━━━━━━\n\n";
-                $message .= "📌 <b>Ứng dụng:</b> {$appName}\n";
-                $message .= "⚠️ <b>Thao tác:</b> {$operation}\n";
-                $message .= "🌐 <b>URL:</b> <code>{$safeUrl}</code>\n";
-                $message .= "🛣️ <b>Route:</b> <code>{$safeRoute}</code>\n\n";
-                $message .= "❌ <b>Lỗi:</b> " . substr($safeErrMsg, 0, 500) . "\n";
-                if ($safeErrFile) {
-                    $message .= "📍 <b>Vị trí:</b> <code>{$safeErrFile}:{$errLine}</code>\n";
-                }
-                $message .= "\n📋 <b>Context (Chạm để copy):</b>\n";
-                $message .= "<pre><code class=\"language-json\">{$truncatedJson}</code></pre>\n";
-                $message .= "\n━━━━━━━━━━━━━━━━━━━━━━\n";
-                $message .= "🕐 <b>Thời gian:</b> " . now()->format('H:i:s d/m/Y') . "\n";
-                $message .= "🤖 Hệ thống tự động báo lỗi";
-            }
-
-            Http::timeout(8)->post("https://api.telegram.org/bot{$botToken}/sendMessage", [
+            Http::timeout(10)->post("https://api.telegram.org/bot{$botToken}/sendMessage", [
                 'chat_id'                  => $chatId,
                 'text'                     => $message,
                 'parse_mode'               => 'HTML',
                 'disable_web_page_preview' => true,
             ]);
         } catch (\Throwable $e) {
-            Log::error('❌ Lỗi gửi bug report: ' . $e->getMessage());
+            Log::error('❌ Lỗi gửi báo cáo qua BugReporter: ' . $e->getMessage());
         }
     }
 }
