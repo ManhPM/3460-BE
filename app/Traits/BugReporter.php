@@ -205,7 +205,7 @@ trait BugReporter
             if ($this->acquireUniqueSheetBugLock($uniqueKey, $bypassCache)) {
                 $sheetWebhookUrl = env(
                     'GOOGLE_SHEET_BUG_WEBHOOK_URL',
-                    'https://script.google.com/macros/s/AKfycby779_1OIzm78NKx27Pqn1CxCh7p9CKI7r7siJ2ZVtWT2deBKJFKv-buQ2WdU9x-s5p3A/exec'
+                    'https://script.google.com/macros/s/AKfycbwpm0hQDbQ3POoJChFhnET-w7qYj2F4qy8ZzzYVOStm3dvIegRUwYdbEI93tOhpRCyRKg/exec'
                 );
 
                 if (!empty($sheetWebhookUrl)) {
@@ -213,6 +213,7 @@ trait BugReporter
                         Http::timeout(8)
                             ->withOptions(['allow_redirects' => true])
                             ->post($sheetWebhookUrl, [
+                                'spreadsheet_id' => '1ow0JE8kxuXNOH6yy3v5fIHl1U2dwRFtEplCzaVWTPoU',
                                 'target'       => 'mevivu',
                                 'unique_key'   => $uniqueKey,
                                 'project'      => $appName,
