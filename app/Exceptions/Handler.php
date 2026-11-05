@@ -111,9 +111,11 @@ class Handler extends ExceptionHandler
                 'method' => request()->method(),
                 'data' => $data,
                 'exception' => [
+                    'class' => get_class($e),
                     'message' => $e->getMessage(),
                     'file' => $e->getFile(),
                     'line' => $e->getLine(),
+                    'trace' => $this->extractAppTrace($e),
                 ]
             ]);
 

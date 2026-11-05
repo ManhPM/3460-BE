@@ -21,6 +21,56 @@ trait BugReporter
         $this->sendBugReportEmail($operation, $context);
     }
 
+    /**
+     * Trích xuất tối đa 5 frame stack trace thuộc source code ứng dụng (bỏ qua vendor/).
+     */
+    protected function extractAppTrace(?\Throwable $e): array
+    {
+        if (!$e) {
+            return [];
+        }
+
+        $frames = [];
+        foreach ($e->getTrace() as $frame) {
+            $file = (string) ($frame['file'] ?? '');
+            if ($file === '' || str_contains($file, '/vendor/') || str_ends_with($file, 'public/index.php')) {
+                continue;
+            }
+
+            $relFile = $this->normalizeBugFile($file);
+            $line    = $frame['line'] ?? '?';
+            $class   = $frame['class'] ?? '';
+            $type    = $frame['type'] ?? '';
+            $func    = $frame['function'] ?? '';
+            $call    = ($class || $func) ? " ({$class}{$type}{$func})" : '';
+
+            $frames[] = "{$relFile}:{$line}{$call}";
+            if (count($frames) >= 5) {
+                break;
+            }
+        }
+
+        return $frames;
+    }
+
+    /**
+     * Chuẩn hóa mảng trace truyền sẵn từ context (ví dụ từ ApiResponse).
+     */
+    protected function normalizeTraceArray(array $trace): array
+    {
+        $normalized = [];
+        foreach (array_slice($trace, 0, 5) as $item) {
+            if (is_string($item)) {
+                $normalized[] = $this->normalizeBugFile($item);
+            } elseif (is_array($item) && isset($item['file'])) {
+                $relFile = $this->normalizeBugFile((string) $item['file']);
+                $line    = $item['line'] ?? '?';
+                $normalized[] = "{$relFile}:{$line}";
+            }
+        }
+        return $normalized;
+    }
+
     public function reportThrowable(?\Throwable $e, string $operation = 'EXCEPTION', $request = null): void
     {
         if (!$e) {
@@ -66,14 +116,46 @@ trait BugReporter
                 'method' => $req && method_exists($req, 'method') ? $req->method() : 'CLI',
                 'data' => $data,
                 'exception' => [
+                    'class' => get_class($e),
                     'message' => $e->getMessage(),
                     'file' => $e->getFile(),
                     'line' => $e->getLine(),
+                    'trace' => $this->extractAppTrace($e),
                 ],
             ]);
         } catch (\Throwable $ex) {
             // Silent fail
         }
+    }
+
+    /**
+     * Xác định tên thư mục dự án local trên máy Mac (/Applications/XAMPP/xamppfiles/htdocs/{folder})
+     * ngay cả khi chạy trên server DirectAdmin (public_html) hoặc thư mục release.
+     */
+    protected function resolveProjectFolder(): string
+    {
+        $basePath = str_replace('\\', '/', base_path());
+
+        if (preg_match('#/htdocs/([^/]+(?:/back-end)?)#', $basePath, $m)) {
+            return $m[1];
+        }
+
+        $folder = basename($basePath);
+        if ($folder === 'back-end') {
+            $parent = basename(dirname($basePath));
+            if (!in_array($parent, ['public_html', 'httpdocs', 'htdocs', 'www', 'html'], true)) {
+                return $parent . '/back-end';
+            }
+        }
+
+        if (
+            in_array($folder, ['public_html', 'httpdocs', 'htdocs', 'current', 'html', 'www'], true)
+            || str_starts_with($folder, 'release_')
+        ) {
+            return (string) env('BUG_PROJECT_FOLDER', '3460-BE');
+        }
+
+        return $folder;
     }
 
     /**
@@ -96,7 +178,7 @@ trait BugReporter
     }
 
     /**
-     * Chuẩn hóa đường dẫn file lỗi (bỏ base_path để đồng nhất giữa các bản release).
+     * Chuẩn hóa đường dẫn file lỗi (bỏ base_path để đồng nhất giữa local và server production).
      */
     protected function normalizeBugFile(string $file): string
     {
@@ -104,46 +186,86 @@ trait BugReporter
             return '';
         }
 
-        $basePath = rtrim(base_path(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
-        if (str_starts_with($file, $basePath)) {
-            return substr($file, strlen($basePath));
+        $normalized = str_replace('\\', '/', $file);
+        $basePath   = rtrim(str_replace('\\', '/', base_path()), '/') . '/';
+
+        if (str_starts_with($normalized, $basePath)) {
+            return substr($normalized, strlen($basePath));
         }
 
-        $normalized = preg_replace('#^/var/www/[^/]+/release_[^/]+/#', '', $file);
+        $normalized = preg_replace('#^/home/[^/]+/domains/[^/]+/public_html/#', '', $normalized);
+        $normalized = preg_replace('#^/var/www/[^/]+/release_[^/]+/#', '', (string) $normalized);
         $normalized = preg_replace('#^/var/www/[^/]+/#', '', (string) $normalized);
+        $normalized = preg_replace('#^/Applications/XAMPP/xamppfiles/htdocs/[^/]+/(?:back-end/)?#', '', (string) $normalized);
 
         return $normalized ?: $file;
     }
 
     /**
-     * Tạo chuỗi Prompt 1 dòng (không chứa xuống dòng) để click 1 ô trên Google Sheet hoặc Telegram
-     * là copy dán thẳng vào Antigravity/Cursor để AI tự mở đúng file fix ngay.
+     * Tạo Context JSON rõ ràng, dễ đọc cho AI (Antigravity) để copy nhanh và fix lỗi ngay lập tức.
+     * - Mặc định ($pretty = false): JSON 1 dòng gọn gàng để trên Google Sheets chỉ chiếm 1 dòng, bấm vào mới bung rộng.
+     * - Khi gửi Telegram ($pretty = true): JSON nhiều dòng dễ nhìn trong khung code.
      */
-    protected function buildQuickFixPrompt(
+    protected function buildBugContextJson(
         string $projectFolder,
         string $appName,
         string $operation,
         string $method,
         string $url,
+        string $pathOnly,
         string $route,
+        string $exceptionClass,
         string $errMsg,
         string $relativeFile,
-        string $errLine,
-        string $data
+        $errLine,
+        array $payloadData,
+        array $trace,
+        string $timestamp,
+        bool $pretty = false
     ): string {
         $localRoot = "/Applications/XAMPP/xamppfiles/htdocs/{$projectFolder}";
-        $fileMention = $relativeFile !== ''
-            ? "@[{$localRoot}/{$relativeFile}]" . ($errLine !== '' ? " (dòng {$errLine})" : '')
+        $localFile = $relativeFile !== ''
+            ? "@[{$localRoot}/{$relativeFile}]"
             : "@[{$localRoot}]";
+        $fileLine  = $relativeFile !== ''
+            ? ($errLine !== '' ? "{$relativeFile}:{$errLine}" : $relativeFile)
+            : 'N/A';
 
-        $cleanMsg  = preg_replace('/\s+/', ' ', trim($errMsg));
-        $cleanData = preg_replace('/\s+/', ' ', trim($data));
+        $contextPayload = [
+            'fix_file'  => $localFile,
+            'project'   => $appName,
+            'operation' => $operation,
+            'error'     => array_filter([
+                'class'    => $exceptionClass !== '' ? $exceptionClass : null,
+                'message'  => $errMsg,
+                'file'     => $relativeFile ?: 'N/A',
+                'line'     => $errLine !== '' ? (is_numeric($errLine) ? (int) $errLine : $errLine) : null,
+                'location' => $fileLine,
+            ], static fn($v) => $v !== null),
+            'request'   => [
+                'method'  => $method,
+                'url'     => $url,
+                'path'    => $pathOnly,
+                'route'   => $route,
+                'payload' => $payloadData,
+            ],
+            'trace'     => $trace,
+            'timestamp' => $timestamp,
+        ];
 
-        return "Hãy kiểm tra và fix triệt để lỗi sau trong dự án @[{$localRoot}] ({$appName}) — "
-            . "File lỗi: {$fileMention} — "
-            . "Message lỗi: {$cleanMsg} — "
-            . "Endpoint: {$method} {$url} (Route: {$route} | Thao tác: {$operation}) — "
-            . "Payload: {$cleanData}";
+        if (empty($contextPayload['trace'])) {
+            unset($contextPayload['trace']);
+        }
+
+        $flags = JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | ($pretty ? JSON_PRETTY_PRINT : 0);
+        $json  = (string) json_encode($contextPayload, $flags);
+
+        if (strlen($json) > 3000) {
+            $contextPayload['request']['payload'] = '[Truncated due to size]';
+            $json = (string) json_encode($contextPayload, $flags);
+        }
+
+        return $json;
     }
 
     /**
@@ -194,22 +316,30 @@ trait BugReporter
     public function sendBugReportEmail(string $operation, array $context): void
     {
         try {
-            $method       = (string) ($context['method'] ?? (app()->bound('request') ? request()->method() : 'CLI'));
-            $url          = (string) ($context['url'] ?? (app()->bound('request') ? request()->fullUrl() : 'N/A'));
-            $pathOnly     = $this->normalizeBugPath($url);
-            $route        = (string) ($context['route'] ?? (app()->bound('request') ? (request()->route()?->getName() ?? 'N/A') : 'N/A'));
-            $errMsg       = trim((string) ($context['exception']['message'] ?? ($context['message'] ?? 'N/A')));
-            $errFile      = (string) ($context['exception']['file'] ?? ($context['file'] ?? ''));
-            $relativeFile = $this->normalizeBugFile($errFile);
-            $errLine      = (string) ($context['exception']['line'] ?? ($context['line'] ?? ''));
-            $fileLine     = $relativeFile !== '' ? "{$relativeFile}:{$errLine}" : 'N/A';
-            $data         = json_encode($context['data'] ?? [], JSON_UNESCAPED_UNICODE);
+            $method         = (string) ($context['method'] ?? (app()->bound('request') ? request()->method() : 'CLI'));
+            $url            = (string) ($context['url'] ?? (app()->bound('request') ? request()->fullUrl() : 'N/A'));
+            $pathOnly       = $this->normalizeBugPath($url);
+            $route          = (string) ($context['route'] ?? (app()->bound('request') ? (request()->route()?->getName() ?? 'N/A') : 'N/A'));
+            $exceptionClass = (string) ($context['exception']['class'] ?? '');
+            $errMsg         = trim((string) ($context['exception']['message'] ?? ($context['message'] ?? 'N/A')));
+            $errFile        = (string) ($context['exception']['file'] ?? ($context['file'] ?? ''));
+            $relativeFile   = $this->normalizeBugFile($errFile);
+            $errLine        = (string) ($context['exception']['line'] ?? ($context['line'] ?? ''));
+            $fileLine       = $relativeFile !== '' ? "{$relativeFile}:{$errLine}" : 'N/A';
+            $payloadArray   = is_array($context['data'] ?? null) ? $context['data'] : [];
+            $rawTrace       = is_array($context['exception']['trace'] ?? null) ? $context['exception']['trace'] : [];
+            $trace          = $this->normalizeTraceArray($rawTrace);
 
-            if (strlen($data) > 500) {
-                $data = substr($data, 0, 500) . '... (truncated)';
+            $dataStr = (string) json_encode($payloadArray, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            if (strlen($dataStr) > 500) {
+                $dataStr = substr($dataStr, 0, 500) . '... (truncated)';
             }
 
-            $folder = basename(base_path()); if ($folder === 'back-end') { $folder = basename(dirname(base_path())) . '/back-end'; } $envName = config('app.name') ?: env('APP_NAME', ''); $appName = ($envName && !in_array(strtolower($envName), ['laravel', 'app'], true)) ? "{$folder} ({$envName})" : $folder;
+            $folder  = $this->resolveProjectFolder();
+            $envName = config('app.name') ?: env('APP_NAME', '');
+            $appName = ($envName && !in_array(strtolower($envName), ['laravel', 'app'], true))
+                ? "{$folder} ({$envName})"
+                : $folder;
 
             // Phân loại loại thông báo (error, warning, success, info)
             $type = $context['type'] ?? null;
@@ -225,39 +355,45 @@ trait BugReporter
 
             $timestamp = now()->format('Y-m-d H:i:s');
 
-            $quickFixPrompt = $this->buildQuickFixPrompt(
+            // JSON 1 dòng gọn gàng cho Google Sheets (hiển thị gọn 1 hàng, click đúp mới mở rộng)
+            $contextJsonSheet = $this->buildBugContextJson(
                 $folder,
                 $appName,
                 $operation,
                 $method,
                 $url,
+                $pathOnly,
                 $route,
+                $exceptionClass,
                 $errMsg,
                 $relativeFile,
                 $errLine,
-                $data
+                $payloadArray,
+                $trace,
+                $timestamp,
+                false
             );
 
-            $copyContext = [
-                'app'       => $appName,
-                'type'      => $type,
-                'operation' => $operation,
-                'url'       => "{$method} {$url}",
-                'path'      => $pathOnly,
-                'route'     => $route,
-                'message'   => $errMsg,
-                'file'      => $fileLine,
-                'data'      => $context['data'] ?? [],
-                'timestamp' => $timestamp,
-            ];
+            // JSON format nhiều dòng cho Telegram
+            $contextJsonTelegram = $this->buildBugContextJson(
+                $folder,
+                $appName,
+                $operation,
+                $method,
+                $url,
+                $pathOnly,
+                $route,
+                $exceptionClass,
+                $errMsg,
+                $relativeFile,
+                $errLine,
+                $payloadArray,
+                $trace,
+                $timestamp,
+                true
+            );
 
-            $copyContextJsonStr = json_encode($copyContext, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-            if (strlen($copyContextJsonStr) > 2000) {
-                $copyContext['data'] = '[Truncated due to size]';
-                $copyContextJsonStr = json_encode($copyContext, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-            }
-
-            // 1. Đẩy lỗi duy nhất (Unique theo Project + Path + Message + File:Line) lên Google Sheets LOG BUG MEVIVU
+            // 1. Đẩy lỗi duy nhất lên Google Sheets (5 cột gọn: Key | Context JSON | Trạng thái | Dự án | Message lỗi)
             $bypassCache     = (bool) ($context['bypass_cache'] ?? false);
             $uniqueSignature = "{$appName}|{$pathOnly}|{$errMsg}|{$fileLine}";
             $uniqueKey       = md5($uniqueSignature);
@@ -275,25 +411,15 @@ trait BugReporter
                             ->post($sheetWebhookUrl, [
                                 'spreadsheet_id' => '1ow0JE8kxuXNOH6yy3v5fIHl1U2dwRFtEplCzaVWTPoU',
                                 'target'         => 'mevivu',
+                                'key'            => $uniqueKey,
                                 'unique_key'     => $uniqueKey,
+                                'context_json'   => $contextJsonSheet,
+                                'status'         => 'Chưa xử lý',
                                 'project'        => $appName,
-                                'operation'      => $operation,
-                                'type'           => $type,
-                                'method'         => $method,
-                                'url'            => $url,
-                                'path'           => $pathOnly,
-                                'route'          => $route,
                                 'message'        => $errMsg,
-                                'file'           => $relativeFile,
-                                'line'           => $errLine,
-                                'file_line'      => $fileLine,
-                                'data'           => $data,
-                                'copy_prompt'    => $quickFixPrompt,
-                                'context_json'   => $quickFixPrompt,
-                                'timestamp'      => $timestamp,
                             ]);
                     } catch (\Throwable $sheetEx) {
-                        Log::warning('[BugReporter] Không thể đẩy log lên Google Sheets GUD: ' . $sheetEx->getMessage());
+                        Log::warning('[BugReporter] Không thể đẩy log lên Google Sheets: ' . $sheetEx->getMessage());
                     }
                 }
             }
@@ -334,13 +460,12 @@ trait BugReporter
                     break;
             }
 
-            $safeQuickFixPrompt  = htmlspecialchars($quickFixPrompt, ENT_NOQUOTES, 'UTF-8');
-            $safeCopyContextJson = htmlspecialchars($copyContextJsonStr, ENT_NOQUOTES, 'UTF-8');
-            $safeUrl             = htmlspecialchars("{$method} {$url}", ENT_NOQUOTES, 'UTF-8');
-            $safeRoute           = htmlspecialchars($route, ENT_NOQUOTES, 'UTF-8');
-            $safeErrMsg          = htmlspecialchars($errMsg, ENT_NOQUOTES, 'UTF-8');
-            $safeErrFile         = htmlspecialchars($relativeFile ?: $errFile, ENT_NOQUOTES, 'UTF-8');
-            $safeData            = htmlspecialchars($data, ENT_NOQUOTES, 'UTF-8');
+            $safeContextJson = htmlspecialchars($contextJsonTelegram, ENT_NOQUOTES, 'UTF-8');
+            $safeUrl         = htmlspecialchars("{$method} {$url}", ENT_NOQUOTES, 'UTF-8');
+            $safeRoute       = htmlspecialchars($route, ENT_NOQUOTES, 'UTF-8');
+            $safeErrMsg      = htmlspecialchars($errMsg, ENT_NOQUOTES, 'UTF-8');
+            $safeErrFile     = htmlspecialchars($relativeFile ?: $errFile, ENT_NOQUOTES, 'UTF-8');
+            $safeData        = htmlspecialchars($dataStr, ENT_NOQUOTES, 'UTF-8');
 
             $message  = "{$headerTitle}\n";
             $message .= "━━━━━━━━━━━━━━━━━━━━━━\n\n";
@@ -359,15 +484,12 @@ trait BugReporter
                 $message .= "📍 <b>Vị trí:</b> <code>{$safeErrFile}:{$errLine}</code>\n";
             }
 
-            if ($data && $data !== '[]' && $data !== '{}') {
+            if ($dataStr && $dataStr !== '[]' && $dataStr !== '{}') {
                 $message .= "\n📋 <b>Dữ liệu kèm theo:</b>\n<pre>{$safeData}</pre>\n";
             }
 
-            $message .= "\n🛠 <b>Copy nhanh để Fix (1-Tap):</b>\n";
-            $message .= "<code>{$safeQuickFixPrompt}</code>\n";
-
-            $message .= "\n📋 <b>Context JSON:</b>\n";
-            $message .= "<pre><code class=\"language-json\">{$safeCopyContextJson}</code></pre>\n";
+            $message .= "\n📋 <b>Context JSON (Copy nhanh để Fix):</b>\n";
+            $message .= "<pre><code class=\"language-json\">{$safeContextJson}</code></pre>\n";
 
             $message .= "\n━━━━━━━━━━━━━━━━━━━━━━\n";
             $message .= "🕐 <b>Thời gian:</b> " . now()->format('H:i:s d/m/Y') . "\n";
