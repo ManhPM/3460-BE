@@ -22,7 +22,7 @@ trait BugReporter
     }
 
     /**
-     * Trích xuất tối đa 5 frame stack trace thuộc source code ứng dụng (bỏ qua vendor/).
+     * Trích xuất tối đa 3 frame stack trace thuộc source code ứng dụng (bỏ qua vendor/).
      */
     protected function extractAppTrace(?\Throwable $e): array
     {
@@ -37,15 +37,15 @@ trait BugReporter
                 continue;
             }
 
-            $relFile = $this->normalizeBugFile($file);
-            $line    = $frame['line'] ?? '?';
-            $class   = $frame['class'] ?? '';
-            $type    = $frame['type'] ?? '';
-            $func    = $frame['function'] ?? '';
-            $call    = ($class || $func) ? " ({$class}{$type}{$func})" : '';
+            $relFile    = $this->normalizeBugFile($file);
+            $line       = $frame['line'] ?? '?';
+            $class      = isset($frame['class']) ? class_basename((string) $frame['class']) : '';
+            $type       = $frame['type'] ?? '';
+            $func       = $frame['function'] ?? '';
+            $call       = ($class || $func) ? " ({$class}{$type}{$func})" : '';
 
             $frames[] = "{$relFile}:{$line}{$call}";
-            if (count($frames) >= 5) {
+            if (count($frames) >= 3) {
                 break;
             }
         }
@@ -59,7 +59,7 @@ trait BugReporter
     protected function normalizeTraceArray(array $trace): array
     {
         $normalized = [];
-        foreach (array_slice($trace, 0, 5) as $item) {
+        foreach (array_slice($trace, 0, 3) as $item) {
             if (is_string($item)) {
                 $normalized[] = $this->normalizeBugFile($item);
             } elseif (is_array($item) && isset($item['file'])) {
@@ -69,6 +69,46 @@ trait BugReporter
             }
         }
         return $normalized;
+    }
+
+    /**
+     * Làm gọn message lỗi thành 1 dòng siêu tinh gọn (bỏ Uncaught, bỏ đường dẫn file, bỏ Stack trace và SQL dài).
+     */
+    protected function compactBugMessage(string $message, int $maxLength = 140): string
+    {
+        $msg = trim($message);
+        if ($msg === '' || $msg === 'N/A') {
+            return 'N/A';
+        }
+
+        // 1. Bỏ toàn bộ phần Stack trace phía sau
+        $msg = (string) preg_replace('/\s*Stack trace:.*$/is', '', $msg);
+        $msg = (string) preg_replace('/\s*#\d+\s+[^\n]+.*$/is', '', $msg);
+
+        // 2. Bỏ hậu tố " in /path/to/file.php:line" và " thrown"
+        $msg = (string) preg_replace('/\s+in\s+(?:[A-Za-z]:)?[\/\\\\][^\s:]+\.php(?:\(\d+\)|:\d+).*$/is', '', $msg);
+        $msg = (string) preg_replace('/\s+in\s+Command line code(?:\(\d+\)|:\d+).*$/is', '', $msg);
+        $msg = (string) preg_replace('/\s+thrown\s*$/is', '', $msg);
+
+        // 3. Bỏ tiền tố "Uncaught Some\Exception\Class: "
+        $msg = (string) preg_replace('/^Uncaught\s+(?:[A-Za-z0-9_\\\\]+:\s*)?/i', '', $msg);
+
+        // 4. Rút gọn câu SQL dài trong QueryException: "(Connection: ..., SQL: ...)" hoặc "(SQL: ...)"
+        $msg = (string) preg_replace('/\s*\((?:Connection:[^,]+,\s*)?SQL:\s*.*$/is', '', $msg);
+
+        // 5. Rút gọn đường dẫn tuyệt đối nếu còn sót trong message
+        $msg = (string) preg_replace('#/home/[^/]+/domains/[^/]+/public_html/#', '', $msg);
+        $msg = (string) preg_replace('#/var/www/[^/]+/(?:release_[^/]+/)?#', '', $msg);
+        $msg = (string) preg_replace('#/Applications/XAMPP/xamppfiles/htdocs/[^/]+/(?:back-end/)?#', '', $msg);
+
+        // 6. Gộp mọi xuống dòng / khoảng trắng thừa thành 1 dòng duy nhất
+        $msg = trim((string) preg_replace('/\s+/u', ' ', $msg));
+
+        if ($maxLength > 0 && mb_strlen($msg) > $maxLength) {
+            $msg = rtrim(mb_substr($msg, 0, $maxLength - 3)) . '...';
+        }
+
+        return $msg !== '' ? $msg : 'N/A';
     }
 
     public function reportThrowable(?\Throwable $e, string $operation = 'EXCEPTION', $request = null): void
@@ -231,24 +271,27 @@ trait BugReporter
             ? ($errLine !== '' ? "{$relativeFile}:{$errLine}" : $relativeFile)
             : 'N/A';
 
+        $shortClass = $exceptionClass !== '' ? class_basename($exceptionClass) : null;
+        $compactMsg = $this->compactBugMessage($errMsg, 180);
+
         $contextPayload = [
             'fix_file'  => $localFile,
             'project'   => $appName,
             'operation' => $operation,
             'error'     => array_filter([
-                'class'    => $exceptionClass !== '' ? $exceptionClass : null,
-                'message'  => $errMsg,
+                'class'    => $shortClass,
+                'message'  => $compactMsg,
                 'file'     => $relativeFile ?: 'N/A',
                 'line'     => $errLine !== '' ? (is_numeric($errLine) ? (int) $errLine : $errLine) : null,
                 'location' => $fileLine,
             ], static fn($v) => $v !== null),
-            'request'   => [
+            'request'   => array_filter([
                 'method'  => $method,
                 'url'     => $url,
                 'path'    => $pathOnly,
-                'route'   => $route,
-                'payload' => $payloadData,
-            ],
+                'route'   => ($route !== '' && $route !== 'N/A' && $route !== 'unknown') ? $route : null,
+                'payload' => !empty($payloadData) ? $payloadData : null,
+            ], static fn($v) => $v !== null),
             'trace'     => $trace,
             'timestamp' => $timestamp,
         ];
@@ -260,8 +303,8 @@ trait BugReporter
         $flags = JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | ($pretty ? JSON_PRETTY_PRINT : 0);
         $json  = (string) json_encode($contextPayload, $flags);
 
-        if (strlen($json) > 3000) {
-            $contextPayload['request']['payload'] = '[Truncated due to size]';
+        if (strlen($json) > 1200) {
+            unset($contextPayload['request']['payload']);
             $json = (string) json_encode($contextPayload, $flags);
         }
 
@@ -321,7 +364,11 @@ trait BugReporter
             $pathOnly       = $this->normalizeBugPath($url);
             $route          = (string) ($context['route'] ?? (app()->bound('request') ? (request()->route()?->getName() ?? 'N/A') : 'N/A'));
             $exceptionClass = (string) ($context['exception']['class'] ?? '');
-            $errMsg         = trim((string) ($context['exception']['message'] ?? ($context['message'] ?? 'N/A')));
+            $rawErrMsg      = trim((string) ($context['exception']['message'] ?? ($context['message'] ?? 'N/A')));
+            if (($exceptionClass === '' || str_contains($exceptionClass, 'FatalError')) && preg_match('/^Uncaught\s+([A-Za-z0-9_\\\\]+):/i', $rawErrMsg, $mClass)) {
+                $exceptionClass = $mClass[1];
+            }
+            $errMsg         = $this->compactBugMessage($rawErrMsg, 140);
             $errFile        = (string) ($context['exception']['file'] ?? ($context['file'] ?? ''));
             $relativeFile   = $this->normalizeBugFile($errFile);
             $errLine        = (string) ($context['exception']['line'] ?? ($context['line'] ?? ''));
