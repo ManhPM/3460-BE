@@ -354,6 +354,60 @@ trait BugReporter
     }
 
     /**
+     * Kiểm tra môi trường hiện tại có phải local dev hay không (tránh gửi Telegram khi test local).
+     */
+    protected function isLocalBugEnvironment(string $url = ''): bool
+    {
+        if (function_exists('app') && app()->environment(['local', 'testing'])) {
+            return true;
+        }
+
+        $basePath = str_replace('\\', '/', base_path());
+        if (str_contains($basePath, '/Applications/XAMPP/') || preg_match('#^[A-Za-z]:/xampp/#i', $basePath)) {
+            return true;
+        }
+
+        $requestHosts = [];
+        if ($url !== '' && $url !== 'N/A' && !str_starts_with($url, 'CLI')) {
+            $parsedHost = parse_url($url, PHP_URL_HOST);
+            if ($parsedHost) {
+                $requestHosts[] = strtolower((string) $parsedHost);
+            }
+        }
+        if (app()->bound('request')) {
+            try {
+                $host = request()->getHost();
+                if ($host) {
+                    $requestHosts[] = strtolower((string) $host);
+                }
+            } catch (\Throwable $e) {
+                // Bỏ qua nếu không đọc được host từ request
+            }
+        }
+
+        $hostsToCheck = array_values(array_unique(array_filter($requestHosts)));
+        if ($hostsToCheck === []) {
+            $appUrlHost = parse_url((string) config('app.url'), PHP_URL_HOST);
+            if ($appUrlHost) {
+                $hostsToCheck[] = strtolower((string) $appUrlHost);
+            }
+        }
+
+        foreach ($hostsToCheck as $host) {
+            if (
+                in_array($host, ['localhost', '127.0.0.1', '::1', '0.0.0.0'], true)
+                || str_ends_with($host, '.local')
+                || str_ends_with($host, '.test')
+                || str_ends_with($host, '.localhost')
+            ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Gửi báo cáo bug hoặc thông báo hệ thống qua Google Sheets (LOG BUG MEVIVU) & Telegram Bot.
      */
     public function sendBugReportEmail(string $operation, array $context): void
@@ -472,6 +526,10 @@ trait BugReporter
             }
 
             // 2. Gửi thông báo qua Telegram (tránh trùng lặp trong 3 phút)
+            if ($this->isLocalBugEnvironment($url)) {
+                return;
+            }
+
             $telegramCacheKey = 'bug_report_' . $uniqueKey;
             if (!$bypassCache && !Cache::add($telegramCacheKey, true, 180)) {
                 return;
